@@ -1,9 +1,10 @@
 <script setup>
 import { useDisplay } from 'vuetify/lib/framework.mjs'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import useUsuarios from '../composables/useUsuarios'
 
 const {
+  usuario,
   paises,
   obtenerPaises,
   obtenerPerfiles,
@@ -13,22 +14,24 @@ const {
   perfil,
   getEstablecimiento,
   establecimientos,
+  dependencias,
+  obtenerDependencias,
   items,
   añadirTabla,
   permisosTemporales,
-  deleteElement
+  deleteElement,
+  v$,
+  usernameErrors,
+  emailErrors,
+  passwordErrors,
+  passwordRepeatErrors,
+  perfilesErrors,
+  sendRequest,
+  guardarUsuario
 } = useUsuarios()
 
 const display = ref(useDisplay())
 const stepVal = ref(1)
-
-const goStepTwo = () => {
-  stepVal.value = 2
-}
-
-const saveForm = () => {
-  alert('Error!!')
-}
 
 const deleteItem = (item) => {
   deleteElement(item)
@@ -39,6 +42,24 @@ let headers = [
   { title: 'Permiso', align: 'center', key: 'permiso' },
   { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
 ]
+
+watch(perfil, (newPerfil) => {
+  if (newPerfil && newPerfil.value) {
+    obtenerPermisos(newPerfil.value);
+  } else {
+    permisos.value = [];
+  }
+});
+
+//Para obtener dependencias
+watch(() => usuario.establecimiento, (newEstablecimiento) => {
+  if (newEstablecimiento) {
+    obtenerDependencias(newEstablecimiento)
+  } else {
+    dependencias.value = []
+  }
+})
+
 
 onMounted(async () => {
   await obtenerPaises()
@@ -79,75 +100,84 @@ onMounted(async () => {
                     <v-text-field
                       label="Primer nombre"
                       variant="solo"
-                      v-model="primerNombre"
+                      v-model="usuario.primerNombre"
+                      maxlength="20"
+                      @input="usuario.primerNombre = usuario.primerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Segundo nombre"
                       variant="solo"
-                      v-model="segundoNombre"
+                      v-model="usuario.segundoNombre"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Tercer nombre"
                       variant="solo"
-                      v-model="tercerNombre"
+                      v-model="usuario.tercerNombre"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Primer apellido"
                       variant="solo"
-                      v-model="primerApellido"
+                      v-model="usuario.primerApellido"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Segundo apellido"
                       variant="solo"
-                      v-model="segundoApellido"
+                      v-model="usuario.segundoApellido"
                     ></v-text-field>
                   </v-col>
                 </v-row>
                 <v-row justify="start">
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
-                    <v-date-input
+                    <v-text-field
                       label="Fecha de nacimiento"
-                      prepend-icon=""
-                      prepend-inner-icon="$calendar"
+                      type="date"
                       variant="solo"
-                      v-model="fechaNacimiento"
-                    ></v-date-input>
+                      v-model="usuario.fechaNacimiento"
+                    ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-autocomplete
                       label="País de nacimiento"
                       variant="solo"
                       :items="paises"
-                      :model-value="paisNacimiento"
+                      v-model="usuario.paisNacimiento"
+                      item-title="title"
+                      item-value="value"
                     ></v-autocomplete>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="N° Documento"
                       variant="solo"
-                      v-model="documento"
+                      v-model="usuario.documento"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Correo institucional"
                       variant="solo"
-                      v-model="correoInstitucional"
+                      v-model="usuario.email"
+                      @blur="v$.email.$touch"
+                      @change="v$.email.$touch"
+                      :error-messages="emailErrors"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-text-field
                       label="Nombre de usuario"
                       variant="solo"
-                      v-model="username"
+                      v-model="usuario.username"
+                      @blur="v$.username.$touch"
+                      @change="v$.username.$touch"
+                      :error-messages="usernameErrors"
                     ></v-text-field>
                   </v-col>
                 </v-row>
@@ -156,18 +186,45 @@ onMounted(async () => {
                     <v-autocomplete
                       label="Establecimiento"
                       :items="establecimientos"
-                      v-model="establecimiento"
+                      v-model="usuario.establecimiento"
+                      item-title="title"
+                      item-value="value"
                     ></v-autocomplete>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
                     <v-select
                       label="Dependencia"
                       variant="solo"
-                      :items="['a', 'b', 'c']"
-                      v-model="dependencia"
+                      :items="dependencias"
+                      v-model="usuario.dependencia"
                     ></v-select>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4"></v-col>
+                </v-row>
+                <!-- Ingreso de contraseña -->
+                <v-row justify="start">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                    <v-text-field
+                      label="Contraseña"
+                      variant="solo"
+                      v-model="usuario.password"
+                      @blur="v$.password.$touch"
+                      @change="v$.password.$touch"
+                      :error-messages="passwordErrors"
+                      type="password"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                    <v-text-field
+                      label="Repetir Contraseña"
+                      variant="solo"
+                      v-model="usuario.passwordRepeat"
+                      @blur="v$.passwordRepeat.$touch"
+                      @change="v$.passwordRepeat.$touch"
+                      :error-messages="passwordRepeatErrors"
+                      type="password"
+                    ></v-text-field>
+                  </v-col>
                 </v-row>
               </v-card>
               <v-row justify="end" class="mt-4 mb-7">
@@ -186,10 +243,11 @@ onMounted(async () => {
                     variant="outlined"
                     color="primaryBackground"
                     style="width: 150px"
+                    @click="$emit('close')"
                     >Cancelar</v-btn
                   >
                   <v-btn
-                    @click="goStepTwo()"
+                    @click="stepVal = 2"
                     :class="display.xs || display.sm ? 'mt-5' : ''"
                     color="primaryBackground"
                     style="width: 150px"
@@ -198,6 +256,7 @@ onMounted(async () => {
                 </v-col>
               </v-row>
             </v-stepper-window-item>
+
             <v-stepper-window-item :value="2">
               <v-card
                 color="backgroundSection"
@@ -220,7 +279,8 @@ onMounted(async () => {
                       variant="solo"
                       :items="perfiles"
                       v-model="perfil"
-                      @update:model-value="obtenerPermisos(perfil.value)"
+                      item-title="title"
+                      item-value="value"
                       return-object
                     ></v-select>
                   </v-col>
@@ -231,6 +291,8 @@ onMounted(async () => {
                       variant="solo"
                       :items="permisos"
                       v-model="permisosTemporales"
+                      item-title="title"
+                      item-value="value"
                       return-object
                     ></v-select>
                   </v-col>
@@ -270,7 +332,6 @@ onMounted(async () => {
                         </div>
                       </template>
                       <template v-slot:actions="{ item }">
-
                         <app-button-action-table-component
                           text="Eliminar"
                           icon="mdi-trash-can-outline"
@@ -298,13 +359,15 @@ onMounted(async () => {
                     variant="outlined"
                     color="primaryBackground"
                     style="width: 150px"
+                    @click="stepVal = 1"
                     >Regresar</v-btn
                   >
                   <v-btn
-                    @click="saveForm()"
+                    @click="guardarUsuario()"
                     :class="display.xs || display.sm ? 'mt-5' : ''"
                     color="primaryBackground"
                     style="width: 150px"
+                    :disabled="sendRequest"
                     >Guardar</v-btn
                   >
                 </v-col>

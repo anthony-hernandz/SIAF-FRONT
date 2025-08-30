@@ -51,6 +51,8 @@ const useUsuarios = () => {
   const paises = ref([])
   const perfil = ref()
   const establecimientos = ref([])
+ //Para el manejo de las dependencias en el formulario
+ const dependencias = ref([])
 
   const permisosTemporales = ref([])
 
@@ -142,7 +144,7 @@ const useUsuarios = () => {
       const element = resultados[i];
       const usuario = {
         codigo: element.n_documento,
-        nombres: `${element.nombres} ${element.apellidos}`,
+        nombres: `${element.primerNombre} ${element.primerApellido}`,
         institucion: element.establecimiento.institucion.nombre,
         establecimiento: element.establecimiento.nombre,
         rol: element.rol.name,
@@ -207,70 +209,101 @@ const useUsuarios = () => {
     }
   }
 
-  const guardarUsuario = async () => {
-    let response = null
+  
 
-    if (v$.value.$invalid) {
-      v$.value.$touch()
-      return
-    }
+ 
+const guardarUsuario = async () => {
+  let response = null
 
-    const body = {
-      primerNombre: primerNombre.value,
-      segundoNombre: segundoNombre.value,
-      tercerNombre: tercerNombre.value,
-      email: correoInstitucional,
-      primerApellido: primerApellido.value,
-      segundoApellido: segundoApellido.value,
-      fechaNacimiento: fechaNacimiento.value,
-      paisNacimiento: paisNacimiento.value,
-      documento: documento.value,
-      username: username.value,
-      establecimiento: establecimiento.value,
-      dependencia: dependencia.value,
-      perfiles: usuario.value.perfiles.map((perfil) => {
-        return { id: perfil }
-      }),
-      permisos: usuario.value.permisos.map((permiso) => {
-        return { id: permiso }
-      })
-    }
+  // Creando un array de IDs de roles y permisos a partir de `items`.
+  const rolesIds = items.value.map(item => item.rolId);
 
+  //validacion
+   /* if (v$.value.$invalid) {
+    v$.value.$touch()
+    console.log('Validación fallida en el frontend. Revise los mensajes de error en el formulario.');
+  return
+   } */
+ 
+
+  
+  const body = {
+    email: usuario.value.email, 
+    //  DTO del backend espera 'idRol' como un string.
+    idRol: rolesIds[0], // <--- tomando el primer ID del rol del array
+    primerNombre: usuario.value.primerNombre,
+    segundoNombre: usuario.value.segundoNombre,
+    tercerNombre:usuario.value.tercerNombre,
+    primerApellido:usuario.value.primerApellido,
+    segundoApellido:usuario.value.segundoApellido,
+    fecha_nacimiento:usuario.value.fechaNacimiento,
+    n_documento:usuario.value.documento,
+    establecimiento:usuario.value.establecimiento,
+    username:usuario.value.username,
+    pais:usuario.value.paisNacimiento,
+  }
+console.log( perfil.value);
+ 
+
+  // Las contraseñas se añaden SOLO si estamos creando un nuevo usuario
+  if (!usuario.value.id) { // Si NO hay ID de usuario (es una creación)
+    body.password = usuario.value.password; // Campo 'password' capturado desde formulario
+    // Nota: 'passwordRepeat' es solo para validación en el frontend y no se envía al backend.
+  }
+  
+
+  console.log('Body de la petición a enviar (solo email, password, idRol):', body);
+
+  // Enviar la petición al backend
+  sendRequest.value = true
+  try {
     if (usuario.value.id) {
-      delete body.password
-      delete body.passwordRepeat
-    }
-
-    sendRequest.value = true
-    if (usuario.value.id) {
+      // Si el usuario tiene ID, es una actualización (PUT).
+      // updateUsersDTO en backend omite la contraseña, así que no se envia.
       response = await usuariosServices.actualizarUsuario(usuario.value.id, body)
     } else {
+      // Si el usuario no tiene ID, es una creación (POST).
       response = await usuariosServices.crearUsuario(body)
     }
-    sendRequest.value = false
 
+    // Maneja la respuesta del backend
     if (response.status === 201 || response.status === 200) {
       const message = response?.data?.message
         ? response.data.message
         : response.status === 201
           ? 'Usuario creado correctamente'
           : 'Usuario actualizado correctamente'
+      
       showToastAlert(message, 'success').then(() => {
         showFormDialog.value = false
+        // Resetear el objeto usuario completamente para limpiar el formulario
         usuario.value = {
-          id: null,
-          username: '',
-          email: '',
-          password: '',
-          passwordRepeat: '',
-          perfiles: [],
-          permisos: []
+          id: null, primerNombre: '', segundoNombre: '', tercerNombre: '', email: '',
+          primerApellido: '', segundoApellido: '', fechaNacimiento: '', paisNacimiento: null,
+          documento: '', username: '', establecimiento: null, dependencia: '',
+          password: '', passwordRepeat: '', perfiles: [], permisos: []
         }
-        v$.value.$reset()
+        //  habilitar la validación de frontend 
+        // v$.value.$reset() 
         obtenerUsuarios()
       })
+    } else {
+      // Manejar otros códigos de estado o errores de la API que no sean 200/201
+      const errorMessage = response?.data?.message || 'Error al guardar el usuario (respuesta no exitosa).'
+      showToastAlert(errorMessage, 'error')
     }
+  } catch (error) {
+    // Capturar errores de red o errores lanzados por el servicio
+    console.error('Error al guardar el usuario:', error)
+    // El mensaje de error del backend suele estar en error.response.data.message
+    const errorMessage = error.response?.data?.message || 'Hubo un problema al conectar con el servidor.'
+    showToastAlert(errorMessage, 'error')
+  } finally {
+    sendRequest.value = false // Finalizar el estado de petición en curso
   }
+}
+
+
 
   const verificarEstado = (item) => {
     if (item.estado) {
@@ -300,19 +333,45 @@ const useUsuarios = () => {
   }
 
 
-  const añadirTabla = () => {
-    let permisos = ''
-    permisosTemporales.value.forEach((item, index) => {
-      permisos += item.title + (index < permisosTemporales.value.length - 1 ? ', ' : '')
-    })
-    items.value.push({ rol: perfil.value.title, permiso: permisos })
-    permisosTemporales.value = null
-    perfil.value = null
-  }
+const añadirTabla = () => {
+  const permisosTitles = permisosTemporales.value.map(p => p.title).join(', ');
+  const permisosIds = permisosTemporales.value.map(p => p.value);
+
+  items.value.push({
+    rol: perfil.value.title,
+    rolId: perfil.value.value, 
+    permiso: permisosTitles,
+    permisoIds: permisosIds, 
+  });
+
+  permisosTemporales.value = []; // Resetear para la siguiente selección
+  perfil.value = null; // Resetear el perfil para la siguiente selección
+}
 
   const deleteElement = (item) => {
     items.value.splice(items.value.indexOf(item), 1);
   }
+
+  //Para dependencias
+  const obtenerDependencias = async (idEstablecimiento) => {
+  if (!idEstablecimiento) {
+    dependencias.value = []
+    return
+  }
+  try {
+    const response = await dashboardServices.getDependencias(idEstablecimiento) 
+    const array = []
+    if (response.status === 200) {
+      response.data.dependencias.forEach((item) => {
+        array.push({ title: item.nombre, value: item.id, disabled: false })
+      })
+      dependencias.value = array
+    }
+  } catch (error) {
+    console.error('Error al obtener dependencias:', error)
+    dependencias.value = []
+  }
+}
 
   return {
     filtros,
@@ -390,7 +449,9 @@ const useUsuarios = () => {
     obtenerPaises,
     getEstablecimiento,
     añadirTabla,
-    deleteElement
+    deleteElement,
+    dependencias,
+    obtenerDependencias
   }
 }
 

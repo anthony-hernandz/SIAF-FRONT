@@ -1,7 +1,8 @@
 <script setup>
 import useUtils from '@/utils/useUtils'
-import useUsuarios from '../composables/useUsuarios'
+import useUsuarios from '../composables/useUsuarios' 
 import { onMounted } from 'vue'
+import UsuariosForm from './UsuariosForm.vue' 
 
 const {
   filtros,
@@ -36,15 +37,16 @@ const {
   perfilesErrors,
   guardarUsuario,
   verificarEstado,
+
 } = useUsuarios()
 
 const { verificarPermisoFtn } = useUtils()
 
 onMounted(async () => {
   await obtenerUsuarios()
+  
   if (verificarPermisoFtn('CREAR_USUARIO') || verificarPermisoFtn('EDITAR_USUARIO')) {
-    await obtenerPerfiles()
-    await obtenerPermisos()
+    await obtenerPerfiles() 
   }
 })
 </script>
@@ -211,94 +213,13 @@ onMounted(async () => {
       textBtn="Guardar"
       @close="closeForm"
       @confirm="guardarUsuario"
-      max-width="700"
+      max-width="1200"
       :send-request="sendRequest"
       :disabled-btn-cancelar="sendRequest"
     >
       <template v-slot:body>
-        <v-row>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6">
-            <v-text-field
-              v-model="usuario.username"
-              color="primary"
-              label="Usuario*"
-              variant="outlined"
-              density="compact"
-              @blur="v$.username.$touch"
-              @change="v$.username.$touch"
-              :error-messages="usernameErrors"
-            ></v-text-field>
-          </v-col>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6">
-            <v-text-field
-              v-model="usuario.email"
-              color="primary"
-              label="Correo*"
-              variant="outlined"
-              density="compact"
-              @blur="v$.email.$touch"
-              @change="v$.email.$touch"
-              :error-messages="emailErrors"
-            ></v-text-field>
-          </v-col>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6" v-if="!usuario.id">
-            <v-text-field
-              v-model="usuario.password"
-              color="primary"
-              label="Contraseña*"
-              variant="outlined"
-              density="compact"
-              type="password"
-              @blur="v$.password.$touch"
-              @change="v$.password.$touch"
-              :error-messages="passwordErrors"
-            ></v-text-field>
-          </v-col>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6" v-if="!usuario.id">
-            <v-text-field
-              v-model="usuario.passwordRepeat"
-              color="primary"
-              label="Confirmar contraseña*"
-              variant="outlined"
-              density="compact"
-              type="password"
-              @blur="v$.passwordRepeat.$touch"
-              @change="v$.passwordRepeat.$touch"
-              :error-messages="passwordRepeatErrors"
-            ></v-text-field>
-          </v-col>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6">
-            <v-autocomplete
-              v-model="usuario.perfiles"
-              chips
-              label="Perfiles*"
-              :items="perfiles"
-              item-title="nombre"
-              item-value="id"
-              multiple
-              variant="outlined"
-              density="compact"
-              closable-chips
-              @blur="v$.perfiles.$touch"
-              @change="v$.perfiles.$touch"
-              :error-messages="perfilesErrors"
-            ></v-autocomplete>
-          </v-col>
-          <v-col sm="12" md="6" lg="6" xl="6" xxl="6">
-            <v-autocomplete
-              v-model="usuario.permisos"
-              chips
-              label="Permisos*"
-              :items="permisos"
-              item-title="nombre"
-              item-value="id"
-              multiple
-              variant="outlined"
-              density="compact"
-              closable-chips
-            ></v-autocomplete>
-          </v-col>
-        </v-row>
+        <!-- inserta componente UsuariosForm.vue -->
+        <UsuariosForm @close="closeForm" />
       </template>
     </app-dialog-component>
   </v-container>
