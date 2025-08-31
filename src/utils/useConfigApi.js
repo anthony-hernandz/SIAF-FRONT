@@ -105,8 +105,8 @@ instance.interceptors.response.use(
     } else {
       await showToastAlert('¡El servidor no responde!', 'error')
     }
-
-    return Promise.resolve(error)
+    // Retorna una promesa rechazada con el error recibido
+    return Promise.reject(error)
   }
 )
 
