@@ -72,6 +72,13 @@ const useAuthStore = defineStore('auth', {
         }
       } catch (error) {
         console.error("Login error:", error);
+        // Devuelve el mensaje de error que se obtiene en el backend
+        if (error.response && error.response.data) {
+          return {
+            logged: false,
+            errors: error.response.data.message,
+          };
+        }
       }
       return { logged: false };
     },
