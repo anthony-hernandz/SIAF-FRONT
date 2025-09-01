@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import useAuthStore from '@/store/auth'
 
@@ -34,13 +34,26 @@ const useOTPCode = () => {
     }, 1000)
   }
 
+  // Limpiar mensaje de error si hay un nuevo valor en `otp`
+  watch(otp, (newVal) => {
+    if (newVal && errorMessage.value) {
+      errorMessage.value = ''
+    }
+  })
+
   const loginVerification = async (email) => {
     const response = await verifyTwoFactorCode({ email, code: otp.value });
+    // Si el codigo `otp` es correcto, redirigir al dashboard
     if (response.status) {
-      clearInterval(countdownInterval)
-      await router.push({ name: 'dashboard' })
+      clearInterval(countdownInterval);
+      await router.push({ name: 'dashboard' });
+    } else {
+      // Si el codigo `otp` es incorrecto, mostrar mensaje de error y limpiar `otp`
+      errorMessage.value = 'Código ingresado incorrecto';
+      otp.value = '';
+      await router.replace({ name: 'email-code-verification', query: { email } });
     }
-  }
+  };
 
   const resendCode = () => {
     if (canResendCode.value) {
