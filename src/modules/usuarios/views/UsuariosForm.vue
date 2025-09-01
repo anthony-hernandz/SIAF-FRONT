@@ -1,6 +1,6 @@
 <script setup>
 import { useDisplay } from 'vuetify/lib/framework.mjs'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed  } from 'vue'
 import useUsuarios from '../composables/useUsuarios'
 
 const {
@@ -66,6 +66,42 @@ onMounted(async () => {
   await obtenerPerfiles()
   await getEstablecimiento()
 })
+
+// Fecha máxima permitida para el registro de un usuario ( 18 años)
+const maxDate = computed(() => {
+  const today = new Date()
+  today.setFullYear(today.getFullYear() - 18)
+  return today.toISOString().split('T')[0] // formato YYYY-MM-DD
+})
+
+//regla de validación para verificar que la fecha seleccionada cumple
+const fechaNacimientoRules = [
+  v => !!v || 'Este campo es obligatorio',
+  v => {
+    if (!v) return true
+    return v <= maxDate.value || 'Debe ser mayor de 18 años'
+  }
+]
+
+// Reglas dinámicas para el ingreso del DUI
+const documentoRules = computed(() => {
+  if (usuario.paisNacimiento === 68) {
+    return [
+      v => !!v || 'Este campo es obligatorio',
+      v => /^[0-9]{8}-[0-9]{1}$/.test(v) || 'Ingrese un número de documento válido' // DUI formato 12345678-9
+    ]
+  } else {
+    return [
+      v => !!v || 'Este campo es obligatorio',
+      v => /^[A-Za-z0-9-]{1,25}$/.test(v) || 'Ingrese un número de documento válido'
+    ]
+  }
+})
+
+
+
+
+
 </script>
 
 <template>
@@ -102,6 +138,7 @@ onMounted(async () => {
                       variant="solo"
                       v-model="usuario.primerNombre"
                       maxlength="20"
+                      :rules="[v => !!v || 'Este campo es obligatorio']"
                       @input="usuario.primerNombre = usuario.primerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
                     ></v-text-field>
                   </v-col>
@@ -110,6 +147,9 @@ onMounted(async () => {
                       label="Segundo nombre"
                       variant="solo"
                       v-model="usuario.segundoNombre"
+                      maxlength="20"
+                      @input="usuario.segundoNombre = usuario.segundoNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                    
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
@@ -117,6 +157,9 @@ onMounted(async () => {
                       label="Tercer nombre"
                       variant="solo"
                       v-model="usuario.tercerNombre"
+                      maxlength="20"
+                      @input="usuario.tercerNombre = usuario.tercerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                    
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
@@ -124,6 +167,10 @@ onMounted(async () => {
                       label="Primer apellido"
                       variant="solo"
                       v-model="usuario.primerApellido"
+                      maxlength="20"
+                      :rules="[v => !!v || 'Este campo es obligatorio']"
+                      @input="usuario.primerApellido = usuario.primerApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                    
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
@@ -131,6 +178,9 @@ onMounted(async () => {
                       label="Segundo apellido"
                       variant="solo"
                       v-model="usuario.segundoApellido"
+                      maxlength="20"
+                      :rules="[v => !!v || 'Este campo es obligatorio']"
+                      @input="usuario.segundoApellido = usuario.segundoApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
                     ></v-text-field>
                   </v-col>
                 </v-row>
@@ -140,6 +190,7 @@ onMounted(async () => {
                       label="Fecha de nacimiento"
                       type="date"
                       variant="solo"
+                      :rules="fechaNacimientoRules"
                       v-model="usuario.fechaNacimiento"
                     ></v-text-field>
                   </v-col>
@@ -148,6 +199,7 @@ onMounted(async () => {
                       label="País de nacimiento"
                       variant="solo"
                       :items="paises"
+                      :rules="[v => !!v || 'Este campo es obligatorio']"
                       v-model="usuario.paisNacimiento"
                       item-title="title"
                       item-value="value"
@@ -158,6 +210,8 @@ onMounted(async () => {
                       label="N° Documento"
                       variant="solo"
                       v-model="usuario.documento"
+                      :rules="documentoRules"
+                      @input="filtrarDocumento"
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
