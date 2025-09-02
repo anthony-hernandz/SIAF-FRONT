@@ -6,6 +6,8 @@ import useDashboard from '@/modules/dashboard/composables/useDashboard';
 import useAuthStore from '@/store/auth';
 
 const { xs } = useDisplay()
+// Variable para almacenar y mostrar el mensaje de error
+const errorMessage = ref('')
 const { llenarEstablecimientos, establecimientos, establecimiento } = useDashboard();
 const { setEstablecimiento } = useAuthStore()
 
@@ -28,7 +30,16 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const submitEstablecimiento = ()=>{
-  setEstablecimiento(establecimiento.value)
+  // Si no se selecciona un establecimiento devuelve un mensaje de error
+  if (!establecimiento.value) {
+    errorMessage.value = 'Debe seleccionar un establecimiento'
+    return
+  }
+  // Al seleccionar un establecimiento, se guarda la informacion en el store
+  setEstablecimiento({
+    id: establecimiento.value.value,
+    nombre: establecimiento.value.title
+  })
   emit('close')
 }
 
@@ -58,9 +69,9 @@ onMounted(async () => {
 
       <v-row justify="center" class="ma-5">
         <v-col cols="11">
-          <v-autocomplete label="Establecimiento"
-          :items="establecimientos"
-          v-model="establecimiento"></v-autocomplete>
+          <!-- Autocomplete para seleccionar un establecimiento y mostrar error si no se ha seleccionado -->
+          <v-autocomplete label="Seleccione" :items="establecimientos" v-model="establecimiento" return-object
+            :error="!!errorMessage" :error-messages="errorMessage ? [errorMessage] : []"></v-autocomplete>
         </v-col>
         <v-col cols="6" class="text-center">
           <app-button-component
