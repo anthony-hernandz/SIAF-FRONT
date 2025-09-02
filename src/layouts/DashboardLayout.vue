@@ -2,10 +2,10 @@
   <v-layout class="bg-backgroundSection" ref="app">
     <app-aside-bar-component ref="asideBar" :modelValue="drawer" @CloseBar="drawer = false" />
     <v-app-bar  app :elevation="0" height="80" class="bg-backgroundSection app-bar" >
-      <v-container class="d-flex align-center justify-space-between">
+      <div class="d-flex align-center justify-space-between" style="width: 100%;">
         <v-spacer />
         <app-bar-menu-component class="app-bar-menu" @open="open" @openCambiarContraseña="openCambiarContraseña"/>
-      </v-container>
+      </div>
     </v-app-bar>
     <v-main >
       <v-container class="py-8 px-6" fluid>
@@ -82,7 +82,7 @@ const openCambiarContraseña = () => {
 .app-bar {
   display: flex;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
 .app-bar-menu {
@@ -92,8 +92,8 @@ const openCambiarContraseña = () => {
 
 @media (max-width: 600px) {
   .app-bar {
-    height: 60px;
-    padding: 0 8px;
+    height: 80px;
+    padding: 0 9px;
   }
 
   .app-bar-menu {

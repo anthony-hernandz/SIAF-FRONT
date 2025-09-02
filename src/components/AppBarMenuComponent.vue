@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import useAuth from '@/modules/auth/composables/useAuth';
+import useAuthStore from '@/store/auth';
+const auth = useAuthStore()
 const menu = ref(false)
 
 const emits = defineEmits(['open', 'openCambiarContraseña'])
@@ -26,13 +28,13 @@ const items = [
     <template v-slot:activator="{ props }">
       <div class="bg-backgroundLay text-commonT activator-container">
         <div class="section-container">
-          <span class=" text-commonT section-name">CATÁLOGOS - ESTADO FÍSICO DEL ACTIVO</span>
+          <span class=" text-commonT section-name">BIENVENIDO</span>
         </div>
 
         <div class="info-container">
-          <span class=" text-commonT info-name">VALENTINA VILLAVICENCIO</span>
+          <span class=" text-commonT info-name">{{ auth.user.nombres ?? "Nombres" }} {{ auth.user.apellidos ?? "Apellidos" }}</span>
           <span class=" text-commonT info-position">
-            Hospital Nacional Santa Ana SA 'San Juan de Dios'
+            {{ auth.establecimiento?.nombre ?? "Seleccione" }}
           </span>
         </div>
 
@@ -44,8 +46,9 @@ const items = [
           <v-menu>
             <template v-slot:activator="{ props }">
               <v-btn
-                color="primary"
                 v-bind="props"
+                icon=""
+                class="bg-backgroundSection icon-btn"
               >
                 <v-icon size="30" class="text-commonT icon-color">mdi-account-circle-outline</v-icon>
               </v-btn>
