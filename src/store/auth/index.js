@@ -72,6 +72,13 @@ const useAuthStore = defineStore('auth', {
         }
       } catch (error) {
         console.error("Login error:", error);
+        // Devuelve el mensaje de error que se obtiene en el backend
+        if (error.response && error.response.data) {
+          return {
+            logged: false,
+            errors: error.response.data.message,
+          };
+        }
       }
       return { logged: false };
     },
@@ -172,6 +179,8 @@ const useAuthStore = defineStore('auth', {
           this.setTokens(response.data.token, response.data.refreshToken)
           this.user = {
             id: response.data.user.id,
+            nombres: response.data.user.nombres,
+            apellidos: response.data.user.apellidos,
             email: response.data.user.email,
             tipo_usuario: response.data.user.tipo_usuario
           }
