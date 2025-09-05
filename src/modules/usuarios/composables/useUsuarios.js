@@ -241,6 +241,7 @@ const guardarUsuario = async () => {
     establecimiento:usuario.value.establecimiento,
     username:usuario.value.username,
     pais:usuario.value.paisNacimiento,
+    dependencia:usuario.value.dependencia,
   }
 console.log( perfil.value);
  
@@ -352,7 +353,7 @@ const añadirTabla = () => {
     items.value.splice(items.value.indexOf(item), 1);
   }
 
-  //Para dependencias
+  //Para establecimientos
   const obtenerDependencias = async (idEstablecimiento) => {
   if (!idEstablecimiento) {
     dependencias.value = []
