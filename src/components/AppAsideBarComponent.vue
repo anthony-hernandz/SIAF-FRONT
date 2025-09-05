@@ -11,14 +11,17 @@
 
     <v-list-item class="header-container">
       <v-app-bar-nav-icon @click="toggleSidebar" class="hamburger-icon" />
-      <v-col v-if="sideBar" cols="10">
+    </v-list-item>
+    <!-- Muestra el logo centrado dentro del menu lateral cuando está abierto y permite cerrar sesión al hacer click -->
+    <v-list :class="[{ 'img-content': !sideBar }]">
+      <v-col v-if="sideBar" cols="10" offset="3">
         <v-img
           src="@/assets/img/logo_white.png"
           class="custom-logo"
-          contain
+          @click="logout"
         />
       </v-col>
-    </v-list-item>
+    </v-list>
 
     <v-list v-model:opened="open" class="menu-content">
       <span v-for="(route, i) in menuItems" :key="route.id">
@@ -74,9 +77,11 @@ import { ref, computed, watch, onMounted } from 'vue'
 import useDashboardStore from '@/store/dashboard'
 import { useDisplay } from 'vuetify'
 import { MENU_OPTIONS } from '@/utils/menuOptions'
+import useAuth from '@/modules/auth/composables/useAuth'
 
 const dashboard = useDashboardStore()
 const display = useDisplay()
+const { logout } = useAuth()
 
 const drawer = ref(false)
 const open = ref([])
@@ -101,7 +106,7 @@ watch(open, (newVal) => {
     drawer.value = true
     setTimeout(() => {
       open.value = newVal
-    }, 3000)
+    }, 0) // Evita la apertura del menu automaticamente
   }
 })
 
@@ -119,6 +124,7 @@ watch(sideBar, (newVal) => {
   border-top-right-radius: 15px;
   border-bottom-right-radius: 15px;
   transition: width 0.3s ease-in-out;
+  position: fixed !important; /*El menu no se mueve al hacer scroll*/
 }
 
 .v-list-group.v-list-group--prepend {
@@ -158,9 +164,9 @@ watch(sideBar, (newVal) => {
 }
 
 .custom-logo {
-  height: 20px;
-  position: absolute;
-  right: 16px;
+  width: 50%;      
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
 }
 
 .menu-icon {
@@ -168,6 +174,10 @@ watch(sideBar, (newVal) => {
   font-size: 22px !important;
 }
 
+.img-content{
+  margin-top: 135px;
+  margin-left: 8px;
+}
 
 .menu-content {
   margin-top: 10px;
