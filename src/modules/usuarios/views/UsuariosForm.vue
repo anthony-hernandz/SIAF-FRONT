@@ -2,6 +2,7 @@
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { ref, onMounted, watch, computed  } from 'vue'
 import useUsuarios from '../composables/useUsuarios'
+import dependenciaService from '@/services/dependencias.services';
 
 const {
   usuario,
@@ -37,6 +38,21 @@ const deleteItem = (item) => {
   deleteElement(item)
 }
 
+//exclusivo para la carga de las dependencias
+const dependenciasFormulario = ref([]);
+const cargarDependenciasFormulario = async () => {
+  try {
+    const resultado = await dependenciaService.obtenerDependencias();
+    dependenciasFormulario.value = resultado.data; //  extrae solo el array
+  } catch (error) {
+    console.error('Error al cargar dependencias del formulario:', error);
+    dependenciasFormulario.value = [];
+  }
+};
+
+
+
+
 let headers = [
   { title: 'Rol', align: 'center', key: 'rol' },
   { title: 'Permiso', align: 'center', key: 'permiso' },
@@ -51,7 +67,7 @@ watch(perfil, (newPerfil) => {
   }
 });
 
-//Para obtener dependencias
+//Para obtener establecimiento
 watch(() => usuario.establecimiento, (newEstablecimiento) => {
   if (newEstablecimiento) {
     obtenerDependencias(newEstablecimiento)
@@ -65,6 +81,7 @@ onMounted(async () => {
   await obtenerPaises()
   await obtenerPerfiles()
   await getEstablecimiento()
+  await cargarDependenciasFormulario()
 })
 
 // Fecha máxima permitida para el registro de un usuario ( 18 años)
@@ -129,7 +146,7 @@ const documentoRules = computed(() => {
                       class="bg-secondaryBackground py-2"
                       style="border-radius: 7px; border: 1px solid #111e60"
                     >
-                      <p>Datos Generales</p>
+                      <p>Datos Generales</p> 
                     </div>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
@@ -249,8 +266,11 @@ const documentoRules = computed(() => {
                     <v-select
                       label="Dependencia"
                       variant="solo"
-                      :items="dependencias"
-                      v-model="usuario.dependencia"
+                      :items="dependenciasFormulario"
+    item-title="nombre"
+    item-value="id"
+    v-model="usuario.dependencia"
+
                     ></v-select>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4"></v-col>

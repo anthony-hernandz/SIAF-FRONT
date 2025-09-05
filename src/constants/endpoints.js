@@ -29,5 +29,9 @@ export const ENDPOINTS = {
   },
   MENU: {
     GET: '/api/v1/menu'
+  },
+  DEPENDENCIAS: {
+    BASE: '/api/v1/dependencias'
   }
+
 }
