@@ -76,6 +76,29 @@ watch(() => usuario.establecimiento, (newEstablecimiento) => {
   }
 })
 
+//Generacion automatica de Username: letra de primer Nombre + primerApellido
+watch(
+  () => [usuario.value.primerNombre, usuario.value.primerApellido],
+  ([nuevoNombre, nuevoApellido]) => {
+    if (nuevoNombre && nuevoApellido) {
+      const inicialNombre = nuevoNombre.trim().charAt(0).toLowerCase()
+      const apellidoCompleto = nuevoApellido.trim().toLowerCase().replace(/\s+/g, '')
+
+      const nuevoUsername = `${inicialNombre}${apellidoCompleto}`
+
+      
+        usuario.value.username = nuevoUsername
+      
+    }
+  },
+ 
+)
+
+
+
+
+
+
 
 onMounted(async () => {
   await obtenerPaises()
@@ -246,6 +269,7 @@ const documentoRules = computed(() => {
                       label="Nombre de usuario"
                       variant="solo"
                       v-model="usuario.username"
+                       
                       @blur="v$.username.$touch"
                       @change="v$.username.$touch"
                       :error-messages="usernameErrors"
