@@ -25,10 +25,11 @@
 
     <v-list v-model:opened="open" class="menu-content">
       <span v-for="(route, i) in menuItems" :key="route.id">
+        <!-- Evitar que el menu lateral se abra automaticamente al navegar por una vista hijo -->
         <v-list-group
           v-if="route.children && route.children.length"
           :key="route.id"
-          :value="route.name"
+          :value="sideBar ? route.name : false" 
           link
           active-class="white--text"
         >
