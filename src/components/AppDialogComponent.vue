@@ -14,7 +14,7 @@ const props = defineProps({
   },
   textBtn: {
     type: String,
-    default: 'Confirmar'
+    default: 'Aceptar'
   },
   sendRequest: {
     type: Boolean,
@@ -43,16 +43,16 @@ const showDialog = computed(() => {
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" max-width="900" persistent>
+  <v-dialog v-model="showDialog" max-width="700" persistent>
     <v-card class="pa-4 border-rounded">
       <v-row>
         <v-col class="d-flex justify-end" cols="12"> </v-col>
       </v-row>
-      <v-card-title class="d-flex justify-space-between align-center">
+      <v-card-title class="d-flex justify-space-between align-center px-4 bg-primaryBackground pa-2">
         <span></span>
         <span
-          :class="smAndUp ? 'text-h4' : 'text-h5'"
-          style="word-break: keep-all; text-align: center; color: #1c1e4d; font-weight: bold"
+          :class="smAndUp ? 'text-h4' : 'text-h8'"
+          style="word-break: keep-all; text-align: center; color: #ffffff; font-weight: bold"
         >
           {{ title }}
         </span>

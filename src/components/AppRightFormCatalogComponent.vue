@@ -1,16 +1,16 @@
 <template>
   <div>
     <v-row justify="center">
-      <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12"  class="text-center">
+      <v-col cols="12" xl="12" lg="8" sm="12" md="12" xs="12"  class="text-center">
         <div class="bg-secondaryBackground py-2" style="border-radius: 7px;border: 1px solid #111E60;">
             <p>Registrar</p>
         </div>
       </v-col>
-      <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
+      <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12">
         <slot name="myCatalog"></slot>
       </v-col>
-      <v-col cols="6" class="text-center">
-        <v-btn color="primaryBackground">Agregar</v-btn>
+      <v-col cols="12" class="text-center" style="margin-top: 325px;">
+        <v-btn color="primaryBackground" @click="emit('submit')">Agregar</v-btn>
       </v-col>
     </v-row>
   </div>
@@ -23,7 +23,7 @@ import { useDisplay } from 'vuetify'
 const dashboard = useDashboardStore()
 const display = useDisplay()
 
-const emit = defineEmits(['CloseBar'])
+const emit = defineEmits(['CloseBar', 'submit'])
 
 const open = ref([])
 
@@ -66,5 +66,4 @@ const onCloseBar = () => {
   display: grid;
   grid-template-columns: 34px auto 56px;
 }
-</style>
-  
+ </style>

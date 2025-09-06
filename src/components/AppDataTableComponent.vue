@@ -39,11 +39,11 @@ const props = defineProps({
 
 const { smAndDown } = useDisplay();
 
-const emits = defineEmits(['changePage'])
+const emits = defineEmits(['update:page'])
 
 const page = computed({
   get: () => props.page,
-  set: (value) => emits('changePage', value)
+  set: (value) => emits('update:page', value)
 })
 
 const headersFormatted = computed(() => {
@@ -89,6 +89,8 @@ const itemsFormatted = computed(() => {
     :mobile="smAndDown"
     hide-default-footer
     :class="customHeader ? 'customizedHeader':''"
+    v-model:page="page"
+    
   >
     <!-- Slot correlativo -->
     <template #correlativo="{ index }">
