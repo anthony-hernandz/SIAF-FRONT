@@ -1,9 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import useAuth from '@/modules/auth/composables/useAuth';
 import useAuthStore from '@/store/auth';
+import { MENU_OPTIONS } from '@/utils/menuOptions';
+import { useRoute } from 'vue-router';
 const auth = useAuthStore()
 const menu = ref(false)
+const route = useRoute()
 
 const emits = defineEmits(['open', 'openCambiarContraseña'])
 const { logout } = useAuth()
@@ -21,6 +24,41 @@ const items = [
   } },
 ];
 
+// Realiza la busqueda en el menu de la ruta actual y devuelve los nombres de cada vista
+function findMenuPath(menuList, path, parents = []) {
+  for (const menu of menuList) {
+    // Si encontramos la ruta, devolvemos todos los nombres
+    if (menu.uri === path) {
+      return [...parents, menu.name]
+    }
+    // Si hay rutas mas rutas que solo padre, buscamos recursivamente
+    if (menu.children) {
+      const result = findMenuPath(menu.children, path, [...parents, menu.name])
+      if (result) return result
+    }
+  }
+  return null
+}
+
+// Devuelve el nombre que se mostrara segun la ruta
+const currentMenuName = computed(() => {
+  const pathNames = findMenuPath(MENU_OPTIONS, route.path)
+  // Si no se encuentra alguna coincidencia se muestra BIENVENIDO
+  if (!pathNames) return 'BIENVENIDO'
+
+  const len = pathNames.length
+  // Muestra solo un nivel (padre), ejemplo: 'ADMINISTRACION'
+  if (len === 1) {
+    return pathNames[0]
+  } else if (len === 2) {
+    // Muestra solo un nivel (hijo), ejemplo: 'USUARIOS'
+    return pathNames[1]
+  } else {
+    // Muestra dos niveles (hijo -> nieto), ejemplo: 'USUARIOS - REGISTRO DE USUARIOS'
+    return pathNames.slice(-2).join(' - ')
+  }
+})
+
 </script>
 
 <template>
@@ -28,7 +66,7 @@ const items = [
     <template v-slot:activator="{ props }">
       <div class="bg-backgroundLay text-commonT activator-container">
         <div class="section-container">
-          <span class=" text-commonT section-name">BIENVENIDO</span>
+          <span class=" text-commonT section-name">{{ currentMenuName }}</span>
         </div>
 
         <div class="info-container">
@@ -94,6 +132,7 @@ const items = [
 .section-name {
   font-weight: bold;
   font-size: 1em;
+  text-transform: uppercase;
 }
 
 .info-container {
