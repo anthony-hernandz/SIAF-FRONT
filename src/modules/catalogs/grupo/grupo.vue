@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router'
 
 const { xs, sm, md, lg, xl } = useDisplay()
 const display = ref(useDisplay())
+
 const router = useRouter()
 const utils = useUtilsStore() // Instancia el store
 
@@ -87,6 +88,11 @@ const agregarGrupo = async () => {
 // Lógica de la Tabla y Búsqueda 
 const filteredItems = computed(() => {
   let filtered = items.value;
+
+  const reglasBusqueda = [
+  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
+  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]+$/.test(v) || 'Solo letras, números y tildes',
+]
 
   // Aplica el filtro de búsqueda solo si el término es de 3 o más caracteres
   if (search.value.length >= 3) {
@@ -301,6 +307,8 @@ onMounted(() => {})
                   variant="solo"
                   label="Buscar"
                   append-inner-icon="mdi-magnify"
+                  :rules="reglasBusqueda"
+                  maxlength="50"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12">
