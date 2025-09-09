@@ -38,7 +38,11 @@ export const MENU_OPTIONS = [
     icon: 'mdi-cog',
     uri: '/administracion',
     children: [
-      { id: 11, name: 'Usuarios', icon: 'mdi-account-outline', uri: '/administracion/usuarios' },
+      { id: 11, name: 'Usuarios', icon: 'mdi-account-outline', uri: '/administracion/usuarios',
+        children: [
+          { id: 14, name: 'Registro de Usuarios', icon: 'mdi-account-plus-outline', uri: '/administracion/usuarios/agregar' },
+        ]
+      },
       { id: 12, name: 'Catálogos', icon: 'mdi-list-box-outline', uri: '/administracion/catalogos', children: [
           { id: 21, name: 'Tipo activo', icon: 'mdi-barcode', uri: '/administracion/catalogos/tipo-activo-catalogo' },
           { id: 22, name: 'Características', icon: 'mdi-format-list-text', uri: '/administracion/catalogos/caracteristica' },
