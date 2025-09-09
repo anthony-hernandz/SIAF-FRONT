@@ -257,7 +257,7 @@ onMounted(() => {})
       </template>
     </app-dialog-component>
 
-     <v-sheet color="white" elevation="0" class="">
+     <v-sheet color="white" elevation="0" class="custom-sheet">
     <v-container fluid class="mb-8">
       <v-row justify="center" :class="display.xs || display.sm || display.md ? 'mb-8' : ''">
         <v-col cols="12" xl="4" lg="4" sm="12" md="4">
@@ -389,6 +389,13 @@ onMounted(() => {})
     visibility: visible;
     opacity: 1;
     color: inherit;
+}
+
+/* Fondo blanco principal */
+.custom-sheet {
+  min-height: calc(100vh - 90px);
+  margin-top: -16px;
+  padding: 16px;
 }
 
 /* Estilo del botón regresar */
