@@ -124,8 +124,9 @@ const useUsuarios = () => {
 
   const obtenerUsuarios = async () => {
     loading.value = true
+    usuarios.value = [] // Limpia la lista de usuarios para mostrar los nuevos segun la busqueda
     const params = {
-      paginate: true,
+      paginate: false, // Por el momento no se paginaran los datos para ver mas de 5 usuarios
       page: page.value,
       per_page: itemsPerPage.value
     }
@@ -211,8 +212,8 @@ const useUsuarios = () => {
 
   
 
- 
-const guardarUsuario = async () => {
+// Recibe 'router' para redirigir luego de guardar un nuevo usuario
+const guardarUsuario = async (router) => {
   let response = null
 
   // Creando un array de IDs de roles y permisos a partir de `items`.
@@ -287,6 +288,8 @@ console.log( perfil.value);
         //  habilitar la validación de frontend 
         // v$.value.$reset() 
         obtenerUsuarios()
+        // Redirijir a la ruta 'usuarios' si 'roter' existe
+        if (router) router.push({ name: 'usuarios' })
       })
     } else {
       // Manejar otros códigos de estado o errores de la API que no sean 200/201

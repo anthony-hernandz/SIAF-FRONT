@@ -3,6 +3,7 @@ import useUtils from '@/utils/useUtils'
 import useUsuarios from '../composables/useUsuarios' 
 import { onMounted } from 'vue'
 import UsuariosForm from './UsuariosForm.vue' 
+import { watch } from 'vue'
 
 const {
   filtros,
@@ -49,11 +50,28 @@ onMounted(async () => {
     await obtenerPerfiles() 
   }
 })
+
+// Funcion que realiza un pequeña espera antes de ejecutar la busqueda en el backend, 
+// pero si se escribe algo nuevo se reinicia la espera
+function debounce(fn, delay) {
+  let timeoutId
+  return (...args) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), delay)
+  }
+}
+
+// Realiza la busqueda pero con 500ms despues de que el usuario deja de escribir
+const debouncedBuscarUsuarios = debounce(() => {
+  obtenerUsuarios()
+}, 500)
+
+// Cuando cambia el texto en el buscador se esperan 500ms y se realiza la busqueda automatica
+watch(() => [filtros.value.username], debouncedBuscarUsuarios)
 </script>
 
 <template>
-  <v-container fluid>
-    <app-title-component title="Usuarios" />
+  <v-container fluid class="bg-backgroundLay dashboard-usuarios">
 
     <v-row class="mb-4">
       <v-col
@@ -68,12 +86,13 @@ onMounted(async () => {
         <v-text-field
           v-model="filtros.username"
           color="primary"
-          label="Buscar por usuario"
+          label="Ingrese nombre del usuario"
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-magnify"
         ></v-text-field>
       </v-col>
+      <v-spacer></v-spacer>
       <v-col
         cols="12"
         xs="12"
@@ -82,60 +101,13 @@ onMounted(async () => {
         lg="4"
         xl="4"
         xxl="4"
-        class="d-flex align-center justify-center"
-      >
-        <v-text-field
-          v-model="filtros.email"
-          color="primary"
-          label="Buscar por correo"
-          variant="outlined"
-          density="compact"
-          append-inner-icon="mdi-magnify"
-        ></v-text-field>
-      </v-col>
-      <v-col
-        cols="12"
-        xs="12"
-        sm="12"
-        md="4"
-        lg="4"
-        xl="4"
-        xxl="4"
-        class="d-flex align-start justify-start"
-      >
-        <app-button-component
-          class="mr-4"
-          title="Buscar"
-          colors="primary"
-          @btnAction="
-            () => {
-              if (!filtros.username && !filtros.email) return
-              obtenerUsuarios()
-            }
-          "
-        />
-        <app-button-component
-          title="Limpiar"
-          :outlined="true"
-          colors="primary"
-          @btnAction="limpiarFiltros"
-        />
-      </v-col>
-      <v-col
-        cols="12"
-        xs="12"
-        sm="12"
-        md="12"
-        lg="12"
-        xl="12"
-        xxl="12"
-        class="d-flex align-center justify-end"
+        class="d-flex align-start justify-end"
         v-if="verificarPermisoFtn('CREAR_USUARIO')"
       >
         <app-button-component
           title="Agregar"
-          colors="primary"
-          @btnAction="showForm"
+          colors="primaryBackground"
+          @btnAction="() => $router.push({ name: 'usuarios-agregar' })"
           :send-request="loadingSelects"
         />
       </v-col>
@@ -206,6 +178,20 @@ onMounted(async () => {
         </v-row>
       </template>
     </app-dialog-component>
+    <!--Boton para poder regresar a la pagina anterior-->
+    <v-row class="mt-6">
+      <v-col
+        cols="12"
+        class="d-flex justify-end"
+      >
+        <app-button-component
+          title="Regresar"
+          colors="primaryBackground"
+          @btnAction="() => $router.back()"
+          :send-request="false"
+        />
+      </v-col>
+    </v-row>
 
     <app-dialog-component
       :show="showFormDialog"
@@ -224,3 +210,12 @@ onMounted(async () => {
     </app-dialog-component>
   </v-container>
 </template>
+<style>
+.dashboard-usuarios {
+  padding: 30px;
+  margin-top: -30px;
+  margin-bottom: 10px;
+  min-height: 850px;
+  height: auto;
+}
+</style>
