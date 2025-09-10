@@ -5,17 +5,21 @@ import AppRightFromCatalaogComponent from '@/components/AppRightFormCatalogCompo
 import AppDataTableComponent from '@/components/AppDataTableComponent.vue'
 import AppDialogComponent from '@/components/AppDialogComponent.vue'
 import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
+import AppLoaderComponent from '@/components/AppLoaderComponent.vue' // Importa el componente del loader
+import useUtilsStore from '@/store/utils' // Importa el store de utilidades
 import { useRouter } from 'vue-router'
 
 const { xs, sm, md, lg, xl } = useDisplay()
 const display = ref(useDisplay())
+
 const router = useRouter()
+const utils = useUtilsStore() // Instancia el store
 
 // Paginación manual
 const page = ref(1) // Variable que controla la página actual
 const itemsPerPage = ref(5) // Cantidad de elementos por página
 
-// Datos de la tabla de ejemplo (simula una respuesta del backend) 
+//  Datos de la tabla de ejemplo (simula una respuesta del backend)
 const items = ref([
   { codigo: '001', nombre_grupo: 'Grupo de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
   { codigo: '002', nombre_grupo: 'Grupo de Marketing', register_by: 'Marta Rillo', estado: 'INACTIVO' },
@@ -33,7 +37,7 @@ const headers = [
   { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
 ]
 
-//  Lógica del Formulario de Registro 
+// Lógica del Formulario de Registro
 const formRef = ref(null)
 const nombreGrupo = ref('')
 const codigoGrupo = ref('')
@@ -54,6 +58,11 @@ const reglasCodigo = [
 const agregarGrupo = async () => {
   const { valid } = await formRef.value.validate()
   if (valid) {
+    utils.loader = true; // Activa el loader
+    
+    // Simula una llamada al backend
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const newGroup = {
       codigo: codigoGrupo.value,
       nombre_grupo: nombreGrupo.value,
@@ -71,12 +80,19 @@ const agregarGrupo = async () => {
     nombreGrupo.value = ''
     codigoGrupo.value = ''
     formRef.value.resetValidation()
+
+    utils.loader = false; // Desactiva el loader
   }
 }
 
 // Lógica de la Tabla y Búsqueda 
 const filteredItems = computed(() => {
   let filtered = items.value;
+
+  const reglasBusqueda = [
+  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
+  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]+$/.test(v) || 'Solo letras, números y tildes',
+]
 
   // Aplica el filtro de búsqueda solo si el término es de 3 o más caracteres
   if (search.value.length >= 3) {
@@ -110,7 +126,7 @@ const totalFilteredItems = computed(() => {
   return totalItems.length;
 });
 
-// Lógica de Modales (Habilitar y Deshabilitar)
+//  Lógica de Modales (Habilitar y Deshabilitar) 
 const showActivateModal = ref(false)
 const showDeactivateModal = ref(false)
 const justificacion = ref('')
@@ -137,6 +153,9 @@ const confirmDeactivate = async () => {
     return;
   }
   
+  utils.loader = true;
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
   console.log('Enviando al backend la justificación:', {
     id: currentItem.value.codigo,
     justificacion: justificacion.value,
@@ -150,9 +169,12 @@ const confirmDeactivate = async () => {
   }
   
   closeModals();
+  utils.loader = false;
 }
 
-const confirmActivate = () => {
+const confirmActivate = async () => {
+    utils.loader = true;
+    await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('Enviando al backend la petición de activación:', {
         id: currentItem.value.codigo,
         usuario: 'Usuario Logueado',
@@ -165,6 +187,7 @@ const confirmActivate = () => {
     }
 
     closeModals();
+    utils.loader = false;
 };
 
 const closeModals = () => {
@@ -188,12 +211,12 @@ function regresarAcatalogos() {
 }
 
 onMounted(() => {})
+
 </script>
 
 <template>
   <div>
-    <app-loader-component />
-
+  <app-loader-component />
     <app-dialog-component
       :show="showActivateModal"
       title="Activar Registro"
@@ -209,8 +232,7 @@ onMounted(() => {})
         </p>
       </template>
     </app-dialog-component>
-
-    <app-dialog-component
+     <app-dialog-component
       :show="showDeactivateModal"
       title="Desactivar Registro"
       text-btn="Aceptar"
@@ -235,9 +257,9 @@ onMounted(() => {})
       </template>
     </app-dialog-component>
 
-     <v-sheet color="white" elevation="0" class= "custom-sheet">
-    <v-container fluid class="pt-4">
-      <v-row justify="center" class="mt-0">
+     <v-sheet color="white" elevation="0" class="custom-sheet">
+    <v-container fluid class="mb-8">
+      <v-row justify="center" :class="display.xs || display.sm || display.md ? 'mb-8' : ''">
         <v-col cols="12" xl="4" lg="4" sm="12" md="4">
           <v-card
             :elevation="0"
@@ -285,6 +307,8 @@ onMounted(() => {})
                   variant="solo"
                   label="Buscar"
                   append-inner-icon="mdi-magnify"
+                  :rules="reglasBusqueda"
+                  maxlength="50"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12">
@@ -298,7 +322,6 @@ onMounted(() => {})
                   :items-per-page="itemsPerPage"
                   :customHeader="true"
                 >
-                
                <template v-slot:estado="{ item }">
                   <v-chip
                     label
@@ -309,8 +332,7 @@ onMounted(() => {})
                   >
                     <span>{{ item.estado }}</span>
                   </v-chip>
-                </template>
-
+                 </template>
                   <template v-slot:actions="{ item }">
                     <app-button-action-table-component
                       v-if="item.estado === 'INACTIVO' && item.isNew"
@@ -340,8 +362,12 @@ onMounted(() => {})
                 </app-data-table-component>
              </v-col>
               <v-col cols="11" class="text-end">
-                <v-btn color="primary" variant="outlined" 
-                @click="regresarAcatalogos" class="custom-btn">Regresar</v-btn>
+                <v-btn 
+                color="primary" 
+                variant="outlined" 
+                @click="regresarAcatalogos" 
+                class= "custom-btn"
+                >Regresar</v-btn>
               </v-col>
           </v-row>
           </v-card>
@@ -365,15 +391,16 @@ onMounted(() => {})
     color: inherit;
 }
 
-/* Estilo para el fondo de blanco de la pantalla */
+/* Fondo blanco principal */
 .custom-sheet {
-  min-height: calc(100vh - 90px) ;
+  min-height: calc(100vh - 90px);
   margin-top: -16px;
   padding: 16px;
 }
 
-/* Estilo del boton regresar*/
+/* Estilo del botón regresar */
 .custom-btn {
-  background-color: white ! important;
+  background-color: white!
+  important;
 }
 </style>
