@@ -59,29 +59,29 @@ onMounted(() => {})
   <div>
     <app-loader-component />
 
-    <v-container fluid class="mb-8">
+    <v-container fluid class="mb-8 bg-backgroundLay view-tipoActivo">
 
-      <v-row justify="center"  :class="display.xs || display.sm || display.md ? 'mb-8':''">
+      <v-row justify="left"  :class="display.xs || display.sm || display.md ? 'mb-8':''">
         <v-col cols="12" xl="4" lg="3" sm="12" md="4">
           <v-card
             :elevation="0"
             color="backgroundSection"
             class="px-7 py-7"
-            style="border: 1px solid #6a83be; height: 100% !important"
+            style="border: 1px solid #6a83be; min-height: 750px !important"
           >
-            <app-right-from-catalaog-component>
+            <app-right-from-catalaog-component buttonClass="mi-margin-boton">
               <template #myCatalog>
                 <v-text-field variant="solo" label="Tipo activo: *"></v-text-field>
             </template>
             </app-right-from-catalaog-component>
           </v-card>
         </v-col>
-        <v-col cols="12" xl="6" lg="7" sm="12" md="8">
+        <v-col cols="12" xl="8" lg="9" sm="12" md="8">
           <v-card
             :elevation="0"
             color="backgroundSection"
             class="px-7 py-7"
-            style="border: 1px solid #6a83be"
+            style="border: 1px solid #6a83be; min-height: 750px !important"
           >
             <v-row justify="center">
               <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12" class="text-center">
@@ -123,8 +123,8 @@ onMounted(() => {})
               </app-data-table-component>
               </v-col>
 
-              <v-col cols="11" class="text-end">
-                <v-btn color="primaryBackground" variant="outlined">Regresar</v-btn>
+              <v-col cols="11" class="text-end" style="margin-top: 75px; margin-bottom: -10%;">
+                <v-btn color="primaryBackground" variant="outlined" @click="$router.back()">Regresar</v-btn>
               </v-col>
 
             </v-row>
@@ -134,3 +134,17 @@ onMounted(() => {})
     </v-container>
   </div>
 </template>
+<style>
+.view-tipoActivo {
+  padding: 30px;
+  margin-top: -30px;
+  margin-bottom: 10px;
+  min-height: 810px;
+  height: auto;
+}
+
+.mi-margin-boton {
+  margin-top: 500px !important;
+  margin-bottom: -10%;
+}
+</style>

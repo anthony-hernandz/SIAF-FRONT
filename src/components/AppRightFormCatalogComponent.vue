@@ -9,7 +9,7 @@
       <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12">
         <slot name="myCatalog"></slot>
       </v-col>
-      <v-col cols="12" class="text-center" style="margin-top: 325px;">
+      <v-col cols="12" class="text-center" style="margin-top: 325px;" :class="buttonClass">
         <v-btn color="primaryBackground" @click="emit('submit')">Agregar</v-btn>
       </v-col>
     </v-row>
@@ -41,6 +41,10 @@ const showClose = computed(() => {
 const onCloseBar = () => {
   emit('CloseBar')
 }
+// Prop para recibi la clase CSS y apricarla en el boton Agregar
+const props = defineProps({
+  buttonClass: { type: String, default: '' } 
+})
 
 // const closeAll = () => {
 //   open.value = []
