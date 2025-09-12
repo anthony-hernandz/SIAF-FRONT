@@ -127,7 +127,7 @@ watch(() => [filtros.value.username], debouncedBuscarUsuarios)
         <app-button-component
           title="Agregar "
           colors="primaryBackground"
-  @btnAction="() => () => $router.push({ name: 'usuarios-agregar' })()"
+  @btnAction="() => $router.push({ name: 'usuarios-agregar' })()"
           :send-request="loadingSelects"
         />
       </v-col>
