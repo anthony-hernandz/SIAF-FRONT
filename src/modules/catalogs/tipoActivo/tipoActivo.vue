@@ -3,8 +3,10 @@ import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { ref, onMounted } from 'vue'
 import AppRightFromCatalaogComponent from '@/components/AppRightFormCatalogComponent.vue'
 import AppDataTableComponent from '@/components/AppDataTableComponent.vue'
+import { useRouter } from 'vue-router'
 const { xs, sm, md, lg, xl } = useDisplay()
 const display = ref(useDisplay())
+const router = useRouter()
 
 let items = [
   {
@@ -53,6 +55,13 @@ let headers = [
 ]
 
 onMounted(() => {})
+
+// Función que redirige a la pagina de catalogos
+function regresarAcatalogos() {
+  router.push({
+    name: 'catalogos'
+  })
+}
 </script>
 
 <template>
@@ -124,7 +133,7 @@ onMounted(() => {})
               </v-col>
 
               <v-col cols="11" class="text-end" style="margin-top: 75px; margin-bottom: -10%;">
-                <v-btn color="primaryBackground" variant="outlined" @click="$router.back()">Regresar</v-btn>
+                <v-btn color="primaryBackground" variant="outlined" @click="regresarAcatalogos">Regresar</v-btn>
               </v-col>
 
             </v-row>
