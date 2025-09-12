@@ -3,6 +3,7 @@ import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { ref, onMounted, watch, computed  } from 'vue'
 import useUsuarios from '../composables/useUsuarios'
 import dependenciaService from '@/services/dependencias.services';
+import { useRouter } from 'vue-router';
 
 const {
   usuario,
@@ -31,6 +32,7 @@ const {
   guardarUsuario
 } = useUsuarios()
 
+const router = useRouter()
 const display = ref(useDisplay())
 const stepVal = ref(1)
 
@@ -145,23 +147,22 @@ const documentoRules = computed(() => {
 </script>
 
 <template>
-  <v-container fluid class="mb-8">
+  <v-container fluid class="w-100 pa-0 dashboard-form ">
     <v-row justify="center" :class="display.xs || display.sm || display.md ? 'mb-8' : ''">
-      <v-col cols="12" lg="10" xl="10" md="12" sm="12" xs="12">
-        <v-stepper v-model="stepVal" elevation="0" :mobile="!!(display.xs || display.sm)">
-          <v-stepper-header style="box-shadow: none">
+      <v-col cols="12">
+        <v-stepper v-model="stepVal" elevation="0" :mobile="!!(display.xs || display.sm)" style="height: 820px;" class="bg-backgroundLay">
+          <v-stepper-header style="box-shadow: none; margin:0% 30% 0% 30%;">
             <v-stepper-item title="Datos generales" :value="1" editable> </v-stepper-item>
             <v-divider></v-divider>
             <v-stepper-item title="Permisos" :value="2" editable> </v-stepper-item>
-            <v-divider></v-divider>
           </v-stepper-header>
-          <v-stepper-window>
+          <v-stepper-window style="margin-bottom: 0;">
             <v-stepper-window-item :value="1">
               <v-card
                 color="backgroundSection"
                 class="py-7"
                 :class="display.xs || display.sm ? 'px-3' : 'px-7'"
-                style="border: 1px solid #111e60"
+                style="border: 1px solid #111e60; min-height: 630px;"
               >
                 <v-row justify="start">
                   <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12" class="text-center">
@@ -202,7 +203,7 @@ const documentoRules = computed(() => {
                     
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Primer apellido"
                       variant="solo"
@@ -213,7 +214,7 @@ const documentoRules = computed(() => {
                     
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Segundo apellido"
                       variant="solo"
@@ -225,7 +226,7 @@ const documentoRules = computed(() => {
                   </v-col>
                 </v-row>
                 <v-row justify="start">
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Fecha de nacimiento"
                       type="date"
@@ -234,7 +235,7 @@ const documentoRules = computed(() => {
                       v-model="usuario.fechaNacimiento"
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-autocomplete
                       label="País de nacimiento"
                       variant="solo"
@@ -245,7 +246,7 @@ const documentoRules = computed(() => {
                       item-value="value"
                     ></v-autocomplete>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="N° Documento"
                       variant="solo"
@@ -254,7 +255,7 @@ const documentoRules = computed(() => {
                       @input="filtrarDocumento"
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Correo institucional"
                       variant="solo"
@@ -264,7 +265,7 @@ const documentoRules = computed(() => {
                       :error-messages="emailErrors"
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Nombre de usuario"
                       variant="solo"
@@ -277,7 +278,7 @@ const documentoRules = computed(() => {
                   </v-col>
                 </v-row>
                 <v-row justify="start">
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-autocomplete
                       label="Establecimiento"
                       :items="establecimientos"
@@ -286,7 +287,7 @@ const documentoRules = computed(() => {
                       item-value="value"
                     ></v-autocomplete>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-select
                       label="Dependencia"
                       variant="solo"
@@ -301,7 +302,7 @@ const documentoRules = computed(() => {
                 </v-row>
                 <!-- Ingreso de contraseña -->
                 <v-row justify="start">
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Contraseña"
                       variant="solo"
@@ -312,7 +313,7 @@ const documentoRules = computed(() => {
                       type="password"
                     ></v-text-field>
                   </v-col>
-                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
+                  <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
                       label="Repetir Contraseña"
                       variant="solo"
@@ -341,7 +342,7 @@ const documentoRules = computed(() => {
                     variant="outlined"
                     color="primaryBackground"
                     style="width: 150px"
-                    @click="$emit('close')"
+                    @click="$router.back()"
                     >Cancelar</v-btn
                   >
                   <v-btn
@@ -360,7 +361,7 @@ const documentoRules = computed(() => {
                 color="backgroundSection"
                 class="py-7"
                 :class="display.xs || display.sm ? 'px-3' : 'px-7'"
-                style="border: 1px solid #111e60"
+                style="border: 1px solid #111e60; min-height: 630px;"
               >
                 <v-row justify="center">
                   <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12" class="text-center">
@@ -461,7 +462,7 @@ const documentoRules = computed(() => {
                     >Regresar</v-btn
                   >
                   <v-btn
-                    @click="guardarUsuario()"
+                    @click="guardarUsuario(router)"
                     :class="display.xs || display.sm ? 'mt-5' : ''"
                     color="primaryBackground"
                     style="width: 150px"
@@ -477,3 +478,14 @@ const documentoRules = computed(() => {
     </v-row>
   </v-container>
 </template>
+<style>
+.dashboard-form {
+  padding: 20px 20px 0 20px;
+  margin-top: -45px !important;
+  margin-bottom: 10px;
+}
+.field-col {
+  padding-top: 2px;
+  padding-bottom: 6px;
+}
+</style>

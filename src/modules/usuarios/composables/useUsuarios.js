@@ -94,10 +94,9 @@ const useUsuarios = () => {
   // --- FUNCIONES CRUD ---
   const obtenerUsuarios = async () => {
     loading.value = true
-    usuarios.value = []
-
+    usuarios.value = [] // Limpia la lista de usuarios para mostrar los nuevos segun la busqueda
     const params = {
-      paginate: true,
+      paginate: false, // Por el momento no se paginaran los datos para ver mas de 5 usuarios
       page: page.value,
       per_page: itemsPerPage.value
     }
@@ -174,37 +173,63 @@ const useUsuarios = () => {
     }
   }
 
-  const guardarUsuario = async () => {
-    let response = null
-    const rolesIds = items.value.map((item) => item.rolId)
+  
 
-    const body = {
-      email: usuario.value.email,
-      idRol: rolesIds[0],
-      primerNombre: usuario.value.primerNombre,
-      segundoNombre: usuario.value.segundoNombre,
-      tercerNombre: usuario.value.tercerNombre,
-      primerApellido: usuario.value.primerApellido,
-      segundoApellido: usuario.value.segundoApellido,
-      fecha_nacimiento: usuario.value.fechaNacimiento,
-      n_documento: usuario.value.documento,
-      establecimiento: usuario.value.establecimiento,
-      username: usuario.value.username,
-      pais: usuario.value.paisNacimiento,
-      dependencia: usuario.value.dependencia
+ //revisar router
+const guardarUsuario = async (router) => {
+  let response = null
+
+  // Creando un array de IDs de roles y permisos a partir de `items`.
+  const rolesIds = items.value.map(item => item.rolId);
+
+  //validacion
+   /* if (v$.value.$invalid) {
+    v$.value.$touch()
+    console.log('Validación fallida en el frontend. Revise los mensajes de error en el formulario.');
+  return
+   } */
+ 
+
+  
+  const body = {
+    email: usuario.value.email, 
+    //  DTO del backend espera 'idRol' como un string.
+    idRol: rolesIds[0], // <--- tomando el primer ID del rol del array
+    primerNombre: usuario.value.primerNombre,
+    segundoNombre: usuario.value.segundoNombre,
+    tercerNombre:usuario.value.tercerNombre,
+    primerApellido:usuario.value.primerApellido,
+    segundoApellido:usuario.value.segundoApellido,
+    fecha_nacimiento:usuario.value.fechaNacimiento,
+    n_documento:usuario.value.documento,
+    establecimiento:usuario.value.establecimiento,
+    username:usuario.value.username,
+    pais:usuario.value.paisNacimiento,
+    dependencia:usuario.value.dependencia,
+  }
+console.log( perfil.value);
+ 
+
+  // Las contraseñas se añaden SOLO si estamos creando un nuevo usuario
+  if (!usuario.value.id) { // Si NO hay ID de usuario (es una creación)
+    body.password = usuario.value.password; // Campo 'password' capturado desde formulario
+    // Nota: 'passwordRepeat' es solo para validación en el frontend y no se envía al backend.
+  }
+  
+
+  console.log('Body de la petición a enviar (solo email, password, idRol):', body);
+
+  // Enviar la petición al backend
+  sendRequest.value = true
+  try {
+    if (usuario.value.id) {
+      // Si el usuario tiene ID, es una actualización (PUT).
+      // updateUsersDTO en backend omite la contraseña, así que no se envia.
+      response = await usuariosServices.actualizarUsuario(usuario.value.id, body)
+    } else {
+      // Si el usuario no tiene ID, es una creación (POST).
+      response = await usuariosServices.crearUsuario(body)
     }
-
-    if (!usuario.value.id) {
-      body.password = usuario.value.password
-    }
-
-    sendRequest.value = true
-    try {
-      if (usuario.value.id) {
-        response = await usuariosServices.actualizarUsuario(usuario.value.id, body)
-      } else {
-        response = await usuariosServices.crearUsuario(body)
-      }
 
       if (response.status === 201 || response.status === 200) {
         const message =
@@ -217,7 +242,9 @@ const useUsuarios = () => {
           showFormDialog.value = false
           usuario.value = crearUsuarioVacio()
           obtenerUsuarios()
-        })
+          // Redirijir a la ruta 'usuarios' si 'roter' existe
+        if (router) router.push({ name: 'usuarios' })
+      })
       } else {
         const errorMessage =
           response?.data?.message || 'Error al guardar el usuario (respuesta no exitosa).'
