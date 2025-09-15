@@ -189,7 +189,7 @@ const documentoRules = computed(() => {
                       variant="solo"
                       v-model="usuario.segundoNombre"
                       maxlength="20"
-                      @input="usuario.segundoNombre = usuario.segundoNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.segundoNombre =usuario.segundoNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
                     
                     ></v-text-field>
                   </v-col>

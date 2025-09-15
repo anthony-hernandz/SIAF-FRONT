@@ -1,3 +1,4 @@
+
 import { computed, ref } from 'vue'
 import useVuelidate from '@vuelidate/core'
 import { email, helpers, required, requiredIf, sameAs } from '@vuelidate/validators'
@@ -6,13 +7,17 @@ import useToastAlert from '@/utils/useToastAlert'
 
 const { showToastAlert } = useToastAlert()
 
-const useUsuarios = () => {
+let _sharedUseUsuarios = null
+
+export default function useUsuarios() {
+  if (_sharedUseUsuarios) return _sharedUseUsuarios
+
+  
   const usuarios = ref([])
   const usuario = ref(crearUsuarioVacio())
   const perfiles = ref([])
   const permisos = ref([])
   const headers = ref([
-     { title: 'ID', value: 'id', align: 'center', sortable: false },
     { title: 'N°Documento', value: 'codigo', align: 'center', sortable: false },
     { title: 'Nombres', value: 'nombres', align: 'center', sortable: false },
     { title: 'Institución', value: 'institucion', align: 'center', sortable: false },
@@ -40,7 +45,7 @@ const useUsuarios = () => {
   const permisosTemporales = ref([])
   const items = ref([])
 
-  // --- VALIDACIONES ---
+  // Validaciones para formulario de usuario
   const rules = computed(() => ({
     username: {
       required: helpers.withMessage('El nombre de usuario es requerido', required)
@@ -91,12 +96,12 @@ const useUsuarios = () => {
     v$.value.perfiles.$errors.map((error) => error.$message)
   )
 
-  // --- FUNCIONES CRUD ---
+  
   const obtenerUsuarios = async () => {
     loading.value = true
     usuarios.value = [] // Limpia la lista de usuarios para mostrar los nuevos segun la busqueda
     const params = {
-      paginate: false, // Por el momento no se paginaran los datos para ver mas de 5 usuarios
+      paginate: false,
       page: page.value,
       per_page: itemsPerPage.value
     }
@@ -112,9 +117,9 @@ const useUsuarios = () => {
         id: element.id,
         codigo: element.n_documento,
         nombres: `${element.primerNombre} ${element.primerApellido}`,
-        institucion: element.establecimiento.institucion.nombre,
-        establecimiento: element.establecimiento.nombre,
-        rol: element.rol.name,
+        institucion: element.establecimiento?.institucion?.nombre || '',
+        establecimiento: element.establecimiento?.nombre || '',
+        rol: element.rol?.name || '',
         estado: element.active
       }
       usuarios.value.push(u)
@@ -174,62 +179,44 @@ const useUsuarios = () => {
   }
 
   
+  const guardarUsuario = async (router) => {
+    let response = null
 
- //revisar router
-const guardarUsuario = async (router) => {
-  let response = null
+    // Creando un array de IDs de roles y permisos a partir de `items`.
+    const rolesIds = items.value.map(item => item.rolId);
 
-  // Creando un array de IDs de roles y permisos a partir de `items`.
-  const rolesIds = items.value.map(item => item.rolId);
-
-  //validacion
-   /* if (v$.value.$invalid) {
-    v$.value.$touch()
-    console.log('Validación fallida en el frontend. Revise los mensajes de error en el formulario.');
-  return
-   } */
- 
-
-  
-  const body = {
-    email: usuario.value.email, 
-    //  DTO del backend espera 'idRol' como un string.
-    idRol: rolesIds[0], // <--- tomando el primer ID del rol del array
-    primerNombre: usuario.value.primerNombre,
-    segundoNombre: usuario.value.segundoNombre,
-    tercerNombre:usuario.value.tercerNombre,
-    primerApellido:usuario.value.primerApellido,
-    segundoApellido:usuario.value.segundoApellido,
-    fecha_nacimiento:usuario.value.fechaNacimiento,
-    n_documento:usuario.value.documento,
-    establecimiento:usuario.value.establecimiento,
-    username:usuario.value.username,
-    pais:usuario.value.paisNacimiento,
-    dependencia:usuario.value.dependencia,
-  }
-console.log( perfil.value);
- 
-
-  // Las contraseñas se añaden SOLO si estamos creando un nuevo usuario
-  if (!usuario.value.id) { // Si NO hay ID de usuario (es una creación)
-    body.password = usuario.value.password; // Campo 'password' capturado desde formulario
-    // Nota: 'passwordRepeat' es solo para validación en el frontend y no se envía al backend.
-  }
-  
-
-  console.log('Body de la petición a enviar (solo email, password, idRol):', body);
-
-  // Enviar la petición al backend
-  sendRequest.value = true
-  try {
-    if (usuario.value.id) {
-      // Si el usuario tiene ID, es una actualización (PUT).
-      // updateUsersDTO en backend omite la contraseña, así que no se envia.
-      response = await usuariosServices.actualizarUsuario(usuario.value.id, body)
-    } else {
-      // Si el usuario no tiene ID, es una creación (POST).
-      response = await usuariosServices.crearUsuario(body)
+    const body = {
+      email: usuario.value.email,
+      //  DTO del backend espera 'idRol' como un string.
+      idRol: rolesIds[0], // <--- tomando el primer ID del rol del array
+      primerNombre: usuario.value.primerNombre,
+      segundoNombre: usuario.value.segundoNombre,
+      tercerNombre:usuario.value.tercerNombre,
+      primerApellido:usuario.value.primerApellido,
+      segundoApellido:usuario.value.segundoApellido,
+      fecha_nacimiento:usuario.value.fechaNacimiento,
+      n_documento:usuario.value.documento,
+      establecimiento:usuario.value.establecimiento,
+      username:usuario.value.username,
+      pais:usuario.value.paisNacimiento,
+      dependencia:usuario.value.dependencia,
     }
+
+    // Las contraseñas se añaden SOLO si estamos creando un nuevo usuario
+    if (!usuario.value.id) { // Si NO hay ID de usuario (es una creación)
+      body.password = usuario.value.password; // Campo 'password' capturado desde formulario
+      // Nota: 'passwordRepeat' es solo para validación en el frontend y no se envía al backend.
+    }
+
+    sendRequest.value = true
+    try {
+      if (usuario.value.id) {
+        
+        
+        response = await usuariosServices.actualizarUsuario(usuario.value.id, body)
+      } else {
+        response = await usuariosServices.crearUsuario(body)
+      }
 
       if (response.status === 201 || response.status === 200) {
         const message =
@@ -242,9 +229,8 @@ console.log( perfil.value);
           showFormDialog.value = false
           usuario.value = crearUsuarioVacio()
           obtenerUsuarios()
-          // Redirijir a la ruta 'usuarios' si 'roter' existe
-        if (router) router.push({ name: 'usuarios' })
-      })
+          if (router) router.push({ name: 'usuarios' })
+        })
       } else {
         const errorMessage =
           response?.data?.message || 'Error al guardar el usuario (respuesta no exitosa).'
@@ -260,16 +246,16 @@ console.log( perfil.value);
     }
   }
 
-  //Edicion y agregar nuevo usuario
+  // Edicion y agregar nuevo usuario
   const showForm = async (item = null) => {
-  showFormDialog.value = true
-  v$.value.$reset()
-//console.log('Item recibido en showForm pero antes del if', item.id) // para depuración
-  if (item?.id) { 
+    showFormDialog.value = true
+    v$.value.$reset()
+
+    if (item?.id) {
       loading.value = true;
       try {
         const { data: response } = await usuariosServices.obtenerUsuario(item.id);
-        Object.assign(usuario.value, mapearUsuario(response));
+        Object.assign(usuario.value, mapearUsuario(response))
 
         // Busca el objeto de perfil completo para precargar el v-select
         const rolSeleccionado = perfiles.value.find(p => p.value === usuario.value.rol);
@@ -282,18 +268,18 @@ console.log( perfil.value);
         // Carga todos los perfiles y permisos del usuario en la tabla de items
         items.value = [];
         if (response.perfiles && Array.isArray(response.perfiles)) {
-            response.perfiles.forEach(p => {
-                if (p.permisos && Array.isArray(p.permisos)) {
-                    p.permisos.forEach(permiso => {
-                        items.value.push({
-                            rol: p.nombre,
-                            rolId: p.id,
-                            permiso: permiso.nombre || '',
-                            permisoIds: [permiso.id]
-                        });
-                    });
-                }
-            });
+          response.perfiles.forEach(p => {
+            if (p.permisos && Array.isArray(p.permisos)) {
+              p.permisos.forEach(permiso => {
+                items.value.push({
+                  rol: p.nombre,
+                  rolId: p.id,
+                  permiso: permiso.nombre || '',
+                  permisoIds: [permiso.id]
+                });
+              });
+            }
+          });
         }
         await obtenerPaises();
         await getEstablecimiento();
@@ -304,15 +290,10 @@ console.log( perfil.value);
       } finally {
         loading.value = false;
       }
-  } else {
-    // AGREGAR
-     // console.log('Item recibido en showForm no pasa por editar:', item) // para depuración
-
-   // alert(`Segunda condicion:\n${JSON.stringify(item, null, 2)}`);
-    Object.assign(usuario.value, crearUsuarioVacio()) // Mantener reactividad
+    } else {
+      Object.assign(usuario.value, crearUsuarioVacio())
+    }
   }
-}
-
 
   const closeForm = () => {
     showFormDialog.value = false
@@ -382,7 +363,52 @@ console.log( perfil.value);
     items.value.splice(items.value.indexOf(item), 1)
   }
 
-  return {
+  function crearUsuarioVacio() {
+    return {
+      id: null,
+      primerNombre: '',
+      segundoNombre: '',
+      tercerNombre: '',
+      primerApellido: '',
+      segundoApellido: '',
+      fechaNacimiento: '',
+      paisNacimiento: null,
+      documento: '',
+      username: '',
+      email: '',
+      establecimiento: null,
+      dependencia: null,
+      perfiles: [],
+      permisos: [],
+      rol: null,
+      password: '',
+      passwordRepeat: ''
+    }
+  }
+
+  function mapearUsuario(response) {
+    return {
+      id: response.id,
+      primerNombre: response.primerNombre,
+      segundoNombre: response.segundoNombre,
+      tercerNombre: response.tercerNombre,
+      primerApellido: response.primerApellido,
+      segundoApellido: response.segundoApellido || '',
+      email: response.email || '',
+      username: response.username || '',
+      paisNacimiento: response.paisNacimiento ?? response.pais_nacimiento ?? null,
+      fechaNacimiento: response.fechaNacimiento ?? response.fecha_nacimiento ?? '',
+      documento: response.n_documento ?? response.documento ?? '',
+      establecimiento: response.establecimiento?.id ?? response.establecimiento_id ?? null,
+      dependencia: response.dependencia?.id ?? response.dependencia_id ?? null,
+      rol: response.rol?.id ?? response.rol_id ?? null,
+      password: '',
+      passwordRepeat: ''
+    }
+  }
+
+  
+  _sharedUseUsuarios = {
     filtros,
     headers,
     usuarios,
@@ -431,50 +457,10 @@ console.log( perfil.value);
     añadirTabla,
     deleteElement,
     dependencias,
-    obtenerDependencias
+    obtenerDependencias,
+    crearUsuarioVacio,
+    mapearUsuario
   }
+
+  return _sharedUseUsuarios
 }
-
-// --- HELPERS ---
-const crearUsuarioVacio = () => ({
-  id: null,
-  primerNombre: '',
-  segundoNombre: '',
-  tercerNombre: '',
-  primerApellido: '',
-  segundoApellido: '',
-  fechaNacimiento: '',
-  paisNacimiento: null,
-  documento: '',
-  username: '',
-  email: '',
-  establecimiento: null,
-  dependencia: '',
-  perfiles: [],
-  permisos: [],
-  password: '',
-  passwordRepeat: ''
-})
-
-const mapearUsuario = (response) => ({
-  id: response.id,
-  primerNombre: response.primerNombre,
-  segundoNombre: response.segundoNombre,
-  tercerNombre: response.tercerNombre,
-  primerApellido: response.primerApellido,
-  segundoApellido: response.segundoApellido,
-  fechaNacimiento: response.fechaNacimiento,
-  paisNacimiento: response.pais?.id || null,
-  documento: response.n_documento,
-  username: response.username,
-  email: response.email,
-  establecimiento: response.establecimiento?.id || null,
-  dependencia: response.dependencia?.id || null,
-  perfiles: response.perfiles?.map((p) => p.id) || [],
-  permisos: response.permisos?.map((p) => p.id) || [],
-  rol: response.rol?.id || null,
-  password: '',
-  passwordRepeat: ''
-})
-
-export default useUsuarios
