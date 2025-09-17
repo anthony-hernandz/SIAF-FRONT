@@ -12,6 +12,9 @@ const actualizarUsuario = async (id, data) => network.put(ENDPOINTS.USERS.UPDATE
 
 const eliminarUsuario = async (id) => network.delete(ENDPOINTS.USERS.DELETE_USER(id))
 
+const actualizarEstadoUsuario = async (id, data) => network.patch(ENDPOINTS.USERS.UPDATE_USER_STATE(id), data)
+
+
 const obtenerPaises = async () => network.get('api/v1/admin/usuarios/paises')
 
 export default {
@@ -20,5 +23,6 @@ export default {
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
-  obtenerPaises
+  obtenerPaises,
+  actualizarEstadoUsuario
 }

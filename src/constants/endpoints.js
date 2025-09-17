@@ -25,7 +25,8 @@ export const ENDPOINTS = {
     BASE: '/api/v1/admin/usuarios',
     GET_USER: (id) => `/api/v1/admin/usuarios/${id}`,
     UPDATE_USER: (id) => `/api/v1/admin/usuarios/${id}`,
-    DELETE_USER: (id) => `/api/v1/admin/usuarios/${id}`
+    DELETE_USER: (id) => `/api/v1/admin/usuarios/${id}`,
+    UPDATE_USER_STATE: (id) => `/api/v1/admin/usuarios/${id}/estado` 
   },
   MENU: {
     GET: '/api/v1/menu'

@@ -98,36 +98,61 @@ export default function useUsuarios() {
 
   
   const obtenerUsuarios = async () => {
-    loading.value = true
-    usuarios.value = [] // Limpia la lista de usuarios para mostrar los nuevos segun la busqueda
-    const params = {
-      paginate: false,
-      page: page.value,
-      per_page: itemsPerPage.value
-    }
-    if (filtros.value.username) params.username = filtros.value.username
-    if (filtros.value.email) params.email = filtros.value.email
-
-    const { data: response } = await usuariosServices.obtenerUsuarios(params)
-    const resultados = response?.users || []
-
-    for (let i = 0; i < resultados.length; i++) {
-      const element = resultados[i]
-      const u = {
-        id: element.id,
-        codigo: element.n_documento,
-        nombres: `${element.primerNombre} ${element.primerApellido}`,
-        institucion: element.establecimiento?.institucion?.nombre || '',
-        establecimiento: element.establecimiento?.nombre || '',
-        rol: element.rol?.name || '',
-        estado: element.active
-      }
-      usuarios.value.push(u)
-    }
-
-    totalItems.value = response?.total || 0
-    loading.value = false
+  loading.value = true
+  usuarios.value = [] // Limpia la lista de usuarios para mostrar los nuevos segun la busqueda
+  const params = {
+    paginate: false,
+    page: page.value,
+    per_page: itemsPerPage.value
   }
+  if (filtros.value.username) params.username = filtros.value.username
+  if (filtros.value.email) params.email = filtros.value.email
+
+  const { data: response } = await usuariosServices.obtenerUsuarios(params)
+  const resultados = response?.users || []
+
+  for (let i = 0; i < resultados.length; i++) {
+    const element = resultados[i]
+
+    // soporta distintos formatos de nombre de campo que el backend pueda devolver
+    const createdAtStr =
+      element.createAt ?? element.createdAt ?? element.created_at ?? null
+    const updatedAtStr =
+      element.updateAt ?? element.updatedAt ?? element.update_at ?? null
+
+    // parse a timestamps (si existen)
+    const createdTs = createdAtStr ? Date.parse(createdAtStr) : null
+    const updatedTs = updatedAtStr ? Date.parse(updatedAtStr) : null
+
+    // Se considera  "nuevo" cuando:
+    //  - updateAt es null/undefined (no se ha actualizado aún)
+    //  - o cuando la diferencia entre created y updated <= 1000 ms (tolerancia)
+    const esNuevo = (() => {
+      if (updatedTs === null) return true
+      if (createdTs === null) return false
+      return Math.abs(createdTs - updatedTs) <= 1000 // <= 1s => igual
+    })()
+
+    const u = {
+      id: element.id,
+      codigo: element.n_documento,
+      nombres: `${element.primerNombre} ${element.primerApellido}`,
+      institucion: element.establecimiento?.institucion?.nombre || '',
+      establecimiento: element.establecimiento?.nombre || '',
+      rol: element.rol?.name || '',
+      estado: element.active,
+      createAt: createdAtStr,
+      updateAt: updatedAtStr,
+      esNuevo
+    }
+    usuarios.value.push(u)
+  }
+
+  totalItems.value = response?.total || 0
+  loading.value = false
+}
+
+
 
   const obtenerPerfiles = async () => {
     loadingSelects.value = true
@@ -300,7 +325,7 @@ export default function useUsuarios() {
     usuario.value = crearUsuarioVacio()
   }
 
-  // --- EXTRAS ---
+  
   const verificarEstado = (item) => !!item.estado
 
   const obtenerPaises = async () => {
@@ -407,6 +432,26 @@ export default function useUsuarios() {
     }
   }
 
+  const actualizarEstadoUsuario = async (usuarioId, nuevoEstado) => {
+  sendRequest.value = true
+  try {
+    // El backend espera el campo 'activo' para el estado
+    const body = { activo: nuevoEstado }
+    const response = await usuariosServices.actualizarEstadoUsuario(usuarioId, body)
+    if (response.status === 200) {
+      showToastAlert('Estado actualizado correctamente', 'success')
+      await obtenerUsuarios()
+    } else {
+      showToastAlert('No se pudo actualizar el estado', 'error')
+    }
+  } catch (error) {
+    showToastAlert('Error al actualizar el estado', 'error')
+  } finally {
+    sendRequest.value = false
+  }
+}
+
+
   
   _sharedUseUsuarios = {
     filtros,
@@ -459,7 +504,8 @@ export default function useUsuarios() {
     dependencias,
     obtenerDependencias,
     crearUsuarioVacio,
-    mapearUsuario
+    mapearUsuario,
+    actualizarEstadoUsuario
   }
 
   return _sharedUseUsuarios

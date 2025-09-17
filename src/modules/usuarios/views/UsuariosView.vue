@@ -37,6 +37,7 @@ const {
   perfilesErrors,
   guardarUsuario,
   verificarEstado,
+  actualizarEstadoUsuario,
 } = useUsuarios()
 
 const { verificarPermisoFtn } = useUtils()
@@ -55,14 +56,10 @@ const closeEstadoDialog = () => {
   showEstadoDialog.value = false
 }
 
-// Confirmar acción
-const confirmarCambioEstado = () => {
-  console.log(
-    verificarEstado(usuario.value)
-      ? 'Desactivando usuario:'
-      : 'Activando usuario:',
-    usuario.value
-  )
+// REalizar el cambio de estado
+const confirmarCambioEstado = async () => {
+  const nuevoEstado = !verificarEstado(usuario.value)
+  await actualizarEstadoUsuario(usuario.value.id, nuevoEstado)
   showEstadoDialog.value = false
 }
 
@@ -161,29 +158,47 @@ watch(() => [filtros.value.username], debouncedBuscarUsuarios)
           />
         </template>
 
-        <template v-slot:actions="{ item }">
-          <app-button-action-table-component
-              v-if="verificarPermisoFtn('EDITAR_USUARIO')"
-              text="Editar"
-              icon="mdi-pencil-outline"
-            @btnAction="() => showForm(item)" 
-            />
+<template v-slot:actions="{ item }">
+  <!-- Usuario recién creado (esNuevo === true y está inactivo) -->
+  <template v-if="item.esNuevo && !verificarEstado(item)">
+    <app-button-action-table-component
+      v-if="verificarPermisoFtn('ELIMINAR_USUARIO')"
+      text="Eliminar"
+      icon="mdi-trash-can-outline"
+      @btnAction="showConfirmation(item)"
+    />
+    <app-button-action-table-component
+      v-if="verificarPermisoFtn('EDITAR_USUARIO')"
+      text="Activar"
+      icon="mdi-check-circle-outline"
+      @btnAction="() => toggleEstado(item)"
+    />
+  </template>
+
+  <!-- Usuario ya no es nuevo (ya fue activado al menos una vez) -->
+  <template v-else>
+    <!-- Siempre mostrar Editar si tiene permiso -->
+    <app-button-action-table-component
+      v-if="verificarPermisoFtn('EDITAR_USUARIO')"
+      text="Editar"
+      icon="mdi-pencil-outline"
+      @btnAction="() => showForm(item)" 
+    />
+
+    <!-- Botón Activar/Desactivar (nunca desaparece después de que deja de ser nuevo) -->
+    <app-button-action-table-component
+      v-if="verificarPermisoFtn('EDITAR_USUARIO')"
+      :text="verificarEstado(item) ? 'Deshabilitar' : 'Activar'"
+      :icon="verificarEstado(item) ? 'mdi-cancel' : 'mdi-check-circle-outline'"
+      @btnAction="() => toggleEstado(item)"
+    />
+  </template>
+</template>
 
 
-          <app-button-action-table-component
-            v-if="verificarPermisoFtn('EDITAR_USUARIO')"
-            :text="verificarEstado(item) ? 'Deshabilitar' : 'Activar'"
-            :icon="verificarEstado(item) ? 'mdi-cancel' : 'mdi-check-circle-outline'"
-            @btnAction="() => toggleEstado(item)"
-          />
 
-          <app-button-action-table-component
-            v-if="verificarPermisoFtn('ELIMINAR_USUARIO') && item.esNuevo"
-            text="Eliminar"
-            icon="mdi-trash-can-outline"
-            @btnAction="showConfirmation(item)"
-          />
-        </template>
+
+
       </app-data-table-component>
     </app-content-component>
 
@@ -223,28 +238,34 @@ watch(() => [filtros.value.username], debouncedBuscarUsuarios)
       </v-col>
     </v-row>
 
-    <app-dialog-component
-      v-model="showEstadoDialog"
-      :title="verificarEstado(usuario) ? 'Desactivar registro' : 'Activar registro'"
-      textBtn="Aceptar"
-      @close="closeEstadoDialog"
-      @confirm="confirmarCambioEstado"
-      max-width="500"
-    >
-      <template v-slot:body>
-        <v-row>
-          <v-col cols="12" class="text-center">
-            <span>
-              <b>
-                ¿Está seguro de
-                {{ verificarEstado(usuario) ? 'desactivar' : 'activar' }}
-                el usuario <u>{{ usuario?.username }}</u>?
-              </b>
-            </span>
-          </v-col>
-        </v-row>
-      </template>
-    </app-dialog-component>
+    <app-dialog-component 
+  v-model="showEstadoDialog"
+  :title="verificarEstado(usuario) ? 'Desactivar registro' : 'Activar registro'"
+  textBtn="Aceptar"
+  @close="closeEstadoDialog"
+  @confirm="confirmarCambioEstado"
+  max-width="500"
+>
+  <template v-slot:body>
+    <v-row>
+      <v-col cols="12" class="text-center">
+        <span>
+        
+            ¿Está seguro que desea 
+            {{ verificarEstado(usuario) ? 'desactivar' : 'activar' }}
+            el registro?
+          
+        </span>
+
+        <!-- Mensaje solo se muestra si es nuevo y se quiere activar -->
+        <div v-if="!verificarEstado(usuario) && usuario?.esNuevo" class="mt-2">
+          <b>Una vez activo este no podrá eliminarse.</b>
+        </div>
+      </v-col>
+    </v-row>
+  </template>
+</app-dialog-component>
+
    
     <!-- Modal para formulario de usuario y edicion -->
     <v-dialog
