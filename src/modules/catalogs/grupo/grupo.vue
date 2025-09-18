@@ -5,28 +5,22 @@ import AppRightFromCatalaogComponent from '@/components/AppRightFormCatalogCompo
 import AppDataTableComponent from '@/components/AppDataTableComponent.vue'
 import AppDialogComponent from '@/components/AppDialogComponent.vue'
 import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
-import AppLoaderComponent from '@/components/AppLoaderComponent.vue' // Importa el componente del loader
-import useUtilsStore from '@/store/utils' // Importa el store de utilidades
+import AppLoaderComponent from '@/components/AppLoaderComponent.vue'
+import useUtilsStore from '@/store/utils'
 import { useRouter } from 'vue-router'
 
 const { xs, sm, md, lg, xl } = useDisplay()
 const display = ref(useDisplay())
 
 const router = useRouter()
-const utils = useUtilsStore() // Instancia el store
+const utils = useUtilsStore()
 
 // Paginación manual
-const page = ref(1) // Variable que controla la página actual
-const itemsPerPage = ref(5) // Cantidad de elementos por página
+const page = ref(1)
+const itemsPerPage = ref(5)
 
-//  Datos de la tabla de ejemplo (simula una respuesta del backend)
-const items = ref([
-  { codigo: '001', nombre_grupo: 'Grupo de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
-  { codigo: '002', nombre_grupo: 'Grupo de Marketing', register_by: 'Marta Rillo', estado: 'INACTIVO' },
-  { codigo: '003', nombre_grupo: 'Grupo Nuevo', register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
-  { codigo: '004', nombre_grupo: 'Grupo de Pruebas', register_by: 'Ana Lisis', estado: 'ACTIVO' },
-  { codigo: '005', nombre_grupo: 'Grupo de Diseño', register_by: 'Pedro Picapiedra', estado: 'INACTIVO' },
-])
+// Datos de la tabla de ejemplo (inicialmente vacíos)
+const items = ref([])
 
 // Cabeceras para la tabla v-data-table
 const headers = [
@@ -85,17 +79,17 @@ const agregarGrupo = async () => {
   }
 }
 
-// Lógica de la Tabla y Búsqueda 
-const filteredItems = computed(() => {
-  let filtered = items.value;
-
-  const reglasBusqueda = [
+// Lógica de la Tabla y Búsqueda
+const reglasBusqueda = [
   v => !v || v.length <= 50 || 'Máximo 50 caracteres',
   v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]+$/.test(v) || 'Solo letras, números y tildes',
 ]
 
+const filteredItems = computed(() => {
+  let filtered = items.value;
+
   // Aplica el filtro de búsqueda solo si el término es de 3 o más caracteres
-  if (search.value.length >= 3) {
+  if (search.value && search.value.length >= 3) {
     const searchTerm = search.value.toLowerCase();
     filtered = filtered.filter(item =>
       item.codigo.toLowerCase().includes(searchTerm) ||
@@ -116,7 +110,7 @@ const totalFilteredItems = computed(() => {
   let totalItems = items.value;
 
   // Aplica el filtro de búsqueda para el total de elementos
-  if (search.value.length >= 3) {
+  if (search.value && search.value.length >= 3) {
     const searchTerm = search.value.toLowerCase();
     totalItems = totalItems.filter(item =>
       item.codigo.toLowerCase().includes(searchTerm) ||
@@ -126,7 +120,7 @@ const totalFilteredItems = computed(() => {
   return totalItems.length;
 });
 
-//  Lógica de Modales (Habilitar y Deshabilitar) 
+// Lógica de Modales (Habilitar y Deshabilitar)
 const showActivateModal = ref(false)
 const showDeactivateModal = ref(false)
 const justificacion = ref('')
@@ -210,7 +204,24 @@ function regresarAcatalogos() {
   })
 }
 
-onMounted(() => {})
+// Carga los datos al montar el componente y desactiva el loader
+onMounted(async () => {
+  utils.loader = true; // Activa el loader
+  
+  // Simulación de carga de datos (eliminar en el código real)
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Asigna los datos de ejemplo a la variable reactiva
+  items.value = [
+    { codigo: '001', nombre_grupo: 'Grupo de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
+    { codigo: '002', nombre_grupo: 'Grupo de Marketing', register_by: 'Marta Rillo', estado: 'INACTIVO' },
+    { codigo: '003', nombre_grupo: 'Grupo Nuevo', register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
+    { codigo: '004', nombre_grupo: 'Grupo de Pruebas', register_by: 'Ana Lisis', estado: 'ACTIVO' },
+    { codigo: '005', nombre_grupo: 'Grupo de Diseño', register_by: 'Pedro Picapiedra', estado: 'INACTIVO' },
+  ];
+  
+  utils.loader = false; // Desactiva el loader al finalizar la carga
+})
 
 </script>
 
@@ -306,6 +317,7 @@ onMounted(() => {})
                   v-model="search"
                   variant="solo"
                   label="Buscar"
+                  placeholder="Ingrese nombre del grupo"
                   append-inner-icon="mdi-magnify"
                   :rules="reglasBusqueda"
                   maxlength="50"
@@ -317,7 +329,7 @@ onMounted(() => {})
                   :correlativo="false"
                   :items="filteredItems"
                   :totalItems="totalFilteredItems"
-                  :loading="false"
+                  :loading="utils.loader"
                   v-model:page="page"
                   :items-per-page="itemsPerPage"
                   :customHeader="true"
@@ -405,4 +417,4 @@ onMounted(() => {})
   background-color: white!
   important;
 }
-</style>
+</style> 

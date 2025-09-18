@@ -19,27 +19,10 @@ const page = ref(1)
 const itemsPerPage = ref(5)
 
 //  Datos de la tabla de ejemplo (simula una respuesta del backend)
-const items = ref([
-  { codigo: '001', nombre_subclase: 'SubClase de Programación', grupo_pertenece:'001 - Grupo de Desarrollo', clase_pertenece:'003-Clase de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
-  { codigo: '002', nombre_subclase: 'Sublase de Marketing', grupo_pertenece: '002 - Grupo de Marketing' , clase_pertenece:'076-Clase de Marketing', register_by: 'Marta Rillo', estado: 'INACTIVO' },
-  { codigo: '003', nombre_subclase: 'Sublase de Pruebas', grupo_pertenece: '003- Grupo de Desarrollo' , clase_pertenece: '0097-Clase de Desarrollo ',register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
-])
-
-const grupos = ref ([
-  { codigo: '001', nombre: "Grupo de Desarrollo"},
-  { codigo: '002', nombre: "Grupo de Marketing" },
-  { codigo: '003', nombre: "Grupo Nuevo"},
-  { codigo: '004', nombre: "Grupo de Pruebas"},
-  { codigo: '005', nombre: "Grupo de Diseño"}
-])
-
-const clase = ref ([
-  { codigo: '001', nombre: "Clase progracion "},
-  { codigo: '002', nombre: "Clase de Marketing " },
-  { codigo: '003', nombre: "Clase de Prueba"},
-  { codigo: '004', nombre: "Clase de Diseño"},
-  { codigo: '005', nombre: "clase de Proyecto"}
-])
+// Se inicializan vacíos para simular una carga real
+const items = ref([])
+const grupos = ref([])
+const clase = ref([])
 
 // Propiedad computada para formatear los datos del select
 const gruposDisplay = computed(() => grupos.value.map(g => ({
@@ -233,7 +216,38 @@ function regresarAcatalogos() {
   })
 }
 
-onMounted(() => {})
+// Carga los datos al montar el componente y desactiva el loader
+onMounted(async () => {
+  utils.loader = true; // Activa el loader
+  
+  // Simulación de carga de datos (eliminar en el código real)
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  // Llenamos los arreglos con los datos de ejemplo
+  items.value = [
+    { codigo: '001', nombre_subclase: 'SubClase de Programación', grupo_pertenece:'001 - Grupo de Desarrollo', clase_pertenece:'003-Clase de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
+    { codigo: '002', nombre_subclase: 'Sublase de Marketing', grupo_pertenece: '002 - Grupo de Marketing' , clase_pertenece:'076-Clase de Marketing', register_by: 'Marta Rillo', estado: 'INACTIVO' },
+    { codigo: '003', nombre_subclase: 'Sublase de Pruebas', grupo_pertenece: '003- Grupo de Desarrollo' , clase_pertenece: '0097-Clase de Desarrollo ',register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
+  ];
+  
+  grupos.value = [
+    { codigo: '001', nombre: "Grupo de Desarrollo"},
+    { codigo: '002', nombre: "Grupo de Marketing" },
+    { codigo: '003', nombre: "Grupo Nuevo"},
+    { codigo: '004', nombre: "Grupo de Pruebas"},
+    { codigo: '005', nombre: "Grupo de Diseño"}
+  ];
+  
+  clase.value = [
+    { codigo: '001', nombre: "Clase progracion "},
+    { codigo: '002', nombre: "Clase de Marketing " },
+    { codigo: '003', nombre: "Clase de Prueba"},
+    { codigo: '004', nombre: "Clase de Diseño"},
+    { codigo: '005', nombre: "clase de Proyecto"}
+  ];
+
+  utils.loader = false; // Desactiva el loader al finalizar la carga
+})
 </script>
 
 <template>
@@ -350,6 +364,7 @@ onMounted(() => {})
                     v-model="search"
                     variant="solo"
                     label="Buscar"
+                    placeholder="Ingrese nombre de la subclase"
                     append-inner-icon="mdi-magnify"
                     :rules="reglasBusqueda"
                     maxlength="50"
@@ -361,7 +376,7 @@ onMounted(() => {})
                     :correlativo="false"
                     :items="paginatedItems"
                     :totalItems="totalFilteredItems"
-                    :loading="false"
+                    :loading="utils.loader"
                     v-model:page="page"
                     :items-per-page="itemsPerPage"
                     :customHeader="true"
@@ -457,4 +472,4 @@ onMounted(() => {})
   background-color: white ! important;
   margin-top: 80px;
 }
-</style>
+</style> 
