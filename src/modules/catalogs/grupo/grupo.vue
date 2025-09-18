@@ -330,7 +330,9 @@ onMounted(() => {})
                       ? 'background: #E5FFE9; border: 1px solid #37AB47'
                       : 'background: #FFE5E5; border: 1px solid #FF4c4c'"
                   >
-                    <span>{{ item.estado }}</span>
+                   <span :style="item.estado === 'ACTIVO' ? 'color: #37AB47;' : 'color: #FF4c4c;'">
+                          {{ item.estado }}
+                        </span>
                   </v-chip>
                  </template>
                   <template v-slot:actions="{ item }">

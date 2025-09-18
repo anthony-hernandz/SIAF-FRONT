@@ -1,12 +1,12 @@
 <script setup>
 import { useDisplay } from 'vuetify/lib/framework.mjs'
-import { ref, onMounted, watch, computed  } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import useUsuarios from '../composables/useUsuarios'
 import dependenciaService from '@/services/dependencias.services';
 import { useRouter } from 'vue-router';
 
 const {
-  usuario,
+  usuario, // Asumiendo que `usuario` es un `ref` desde tu composable
   paises,
   obtenerPaises,
   obtenerPerfiles,
@@ -45,15 +45,12 @@ const dependenciasFormulario = ref([]);
 const cargarDependenciasFormulario = async () => {
   try {
     const resultado = await dependenciaService.obtenerDependencias();
-    dependenciasFormulario.value = resultado.data; //  extrae solo el array
+    dependenciasFormulario.value = resultado.data; // extrae solo el array
   } catch (error) {
     console.error('Error al cargar dependencias del formulario:', error);
     dependenciasFormulario.value = [];
   }
 };
-
-
-
 
 let headers = [
   { title: 'Rol', align: 'center', key: 'rol' },
@@ -69,8 +66,15 @@ watch(perfil, (newPerfil) => {
   }
 });
 
-//Para obtener establecimiento
-watch(() => usuario.establecimiento, (newEstablecimiento) => {
+// para la validacion del documento DUI
+watch(() => usuario.value.paisNacimiento, (newValue) => {
+  // Se limpia el valor del documento cuando cambia el país.
+  // forzando la revalidación.
+  usuario.value.documento = '';
+});
+
+
+watch(() => usuario.value.establecimiento, (newEstablecimiento) => {
   if (newEstablecimiento) {
     obtenerDependencias(newEstablecimiento)
   } else {
@@ -78,29 +82,18 @@ watch(() => usuario.establecimiento, (newEstablecimiento) => {
   }
 })
 
-//Generacion automatica de Username: letra de primer Nombre + primerApellido
+
 watch(
   () => [usuario.value.primerNombre, usuario.value.primerApellido],
   ([nuevoNombre, nuevoApellido]) => {
     if (nuevoNombre && nuevoApellido) {
       const inicialNombre = nuevoNombre.trim().charAt(0).toLowerCase()
       const apellidoCompleto = nuevoApellido.trim().toLowerCase().replace(/\s+/g, '')
-
       const nuevoUsername = `${inicialNombre}${apellidoCompleto}`
-
-      
-        usuario.value.username = nuevoUsername
-      
+      usuario.value.username = nuevoUsername
     }
-  },
- 
+  }
 )
-
-
-
-
-
-
 
 onMounted(async () => {
   await obtenerPaises()
@@ -127,7 +120,7 @@ const fechaNacimientoRules = [
 
 // Reglas dinámicas para el ingreso del DUI
 const documentoRules = computed(() => {
-  if (usuario.paisNacimiento === 68) {
+  if (usuario.value.paisNacimiento === 68) {
     return [
       v => !!v || 'Este campo es obligatorio',
       v => /^[0-9]{8}-[0-9]{1}$/.test(v) || 'Ingrese un número de documento válido' // DUI formato 12345678-9
@@ -140,9 +133,21 @@ const documentoRules = computed(() => {
   }
 })
 
+// Función para filtrar el input del documento
+const filtrarDocumento = (event) => {
+  const isElSalvador = usuario.value.paisNacimiento === 68;
+  const rawValue = event.target.value;
 
-
-
+  if (isElSalvador) {
+    // Para DUI, solo permite números y el guión
+    const filteredValue = rawValue.replace(/[^0-9-]/g, '');
+    usuario.value.documento = filteredValue;
+  } else {
+    // Para otros países, permite letras, números y guión
+    const filteredValue = rawValue.replace(/[^A-Za-z0-9-]/g, '');
+    usuario.value.documento = filteredValue;
+  }
+};
 
 </script>
 
@@ -180,7 +185,7 @@ const documentoRules = computed(() => {
                       v-model="usuario.primerNombre"
                       maxlength="20"
                       :rules="[v => !!v || 'Este campo es obligatorio']"
-                      @input="usuario.primerNombre = usuario.primerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.primerNombre = usuario.primerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                     
                     ></v-text-field>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4">
@@ -189,7 +194,7 @@ const documentoRules = computed(() => {
                       variant="solo"
                       v-model="usuario.segundoNombre"
                       maxlength="20"
-                      @input="usuario.segundoNombre = usuario.segundoNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.segundoNombre =usuario.segundoNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                     
                     
                     ></v-text-field>
                   </v-col>
@@ -199,7 +204,7 @@ const documentoRules = computed(() => {
                       variant="solo"
                       v-model="usuario.tercerNombre"
                       maxlength="20"
-                      @input="usuario.tercerNombre = usuario.tercerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.tercerNombre = usuario.tercerNombre.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                     
                     
                     ></v-text-field>
                   </v-col>
@@ -210,7 +215,7 @@ const documentoRules = computed(() => {
                       v-model="usuario.primerApellido"
                       maxlength="20"
                       :rules="[v => !!v || 'Este campo es obligatorio']"
-                      @input="usuario.primerApellido = usuario.primerApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.primerApellido = usuario.primerApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                     
                     
                     ></v-text-field>
                   </v-col>
@@ -221,7 +226,7 @@ const documentoRules = computed(() => {
                       v-model="usuario.segundoApellido"
                       maxlength="20"
                       :rules="[v => !!v || 'Este campo es obligatorio']"
-                      @input="usuario.segundoApellido = usuario.segundoApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                    
+                      @input="usuario.segundoApellido = usuario.segundoApellido.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')"                     
                     ></v-text-field>
                   </v-col>
                 </v-row>
@@ -270,7 +275,6 @@ const documentoRules = computed(() => {
                       label="Nombre de usuario"
                       variant="solo"
                       v-model="usuario.username"
-                       
                       @blur="v$.username.$touch"
                       @change="v$.username.$touch"
                       :error-messages="usernameErrors"
@@ -292,15 +296,13 @@ const documentoRules = computed(() => {
                       label="Dependencia"
                       variant="solo"
                       :items="dependenciasFormulario"
-    item-title="nombre"
-    item-value="id"
-    v-model="usuario.dependencia"
-
+                      item-title="nombre"
+                      item-value="id"
+                      v-model="usuario.dependencia"
                     ></v-select>
                   </v-col>
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4"></v-col>
                 </v-row>
-                <!-- Ingreso de contraseña -->
                 <v-row justify="start">
                   <v-col cols="12" xs="12" sm="12" md="6" lg="4" xl="4" class="field-col">
                     <v-text-field
