@@ -8,6 +8,7 @@ import AppDialogComponent from '@/components/AppDialogComponent.vue'
 import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
 import AppLoaderComponent from '@/components/AppLoaderComponent.vue'
 import { useRouter } from 'vue-router'
+import procedenciasService from '@/services/procedencias.services' // Importación restaurada
 
 // Estado y lógicas
 const { xs, sm, md, lg, xl } = useDisplay()
@@ -33,156 +34,166 @@ const currentItem = ref(null)
 const modalFormRef = ref(null)
 
 // Cabeceras para la tabla
+// Ajustamos las claves para que coincidan con la respuesta del backend
 const headers = ref([
-  { title: 'Procedencia', align: 'start', key: 'procedencia' },
-  { title: 'Registrado por', align: 'start', key: 'register_by' },
-  { title: 'Estado', align: 'center', value: 'estado' },
-  { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
+  { title: 'Procedencia', align: 'start', key: 'nombre' }, // Corregido de 'procedencia' a 'nombre'
+  { title: 'Registrado por', align: 'start', key: 'registro' }, // Corregido de 'register_by' a 'registro'
+  { title: 'Estado', align: 'center', key: 'estado' },
+  { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
 ])
 
 // Lógica de Validaciones 
 const reglasprocedencia = [
-  v => !!v || 'La Procedencia es obligatorio',
-  v => (v && v.length <= 20) || 'El máximo es de 20 caracteres',
-  v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(v) || 'Solo se permiten letras y espacios',
+  v => !!v || 'La Procedencia es obligatorio',
+  v => (v && v.length <= 20) || 'El máximo es de 20 caracteres',
+  v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(v) || 'Solo se permiten letras y espacios',
 ]
 
 const reglasBusqueda = [
-  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
-  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(v) || 'Solo letras, tildes y espacios',
+  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
+  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(v) || 'Solo letras, tildes y espacios',
 ]
 
 const reglasJustificacion = [
-  v => !!v || 'La justificación es obligatoria.'
+  v => !!v || 'La justificación es obligatoria.'
 ]
+
+
+// Función para obtener los datos desde el backend
+const obtenerProcedencias = async () => {
+  utils.loader = true
+  try {
+    // La respuesta del servicio viene dentro de la propiedad 'data'
+    const { data } = await procedenciasService.obtenerProcedencias()
+    // Asignamos la lista de procedencias a 'items.value'
+    items.value = data.procedencia ?? []
+  } catch (error) {
+    console.error('Error al obtener procedencias:', error)
+  } finally {
+    utils.loader = false
+  }
+}
 
 
 // Maneja la acción de agregar un nuevo registro
 const agregarprocedencia = async () => {
-  const { valid } = await formRef.value.validate()
-  if (valid) {
-    utils.loader = true; // Activa el loader
-    
-    // Simulación de una respuesta del backend (eliminar al conectar)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newprocedencia = {
-      procedencia: procedencia.value,
-      register_by: 'Usuario Logueado', // Esto vendría del backend
-      estado: 'INACTIVO', // por defecto
-      isNew: true
-    }
-    items.value.push(newprocedencia)
+ const { valid } = await formRef.value.validate()
+  if (valid) {
+    utils.loader = true; // Activa el loader
+    
+    // Simulación de una respuesta del backend (eliminar al conectar)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const newprocedencia = {
+      procedencia: procedencia.value,
+      register_by: 'Usuario Logueado', // Esto vendría del backend
+      estado: 'INACTIVO', // por defecto
+      isNew: true
+    }
+    items.value.push(newprocedencia)
 
-    // MOVER a la última página automáticamente 
-    const totalItemsCount = filteredItems.value.length // usa filteredItems (antes del slice)
-    const lastPage = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage.value))
-    page.value = lastPage
+    // MOVER a la última página automáticamente 
+    const totalItemsCount = filteredItems.value.length // usa filteredItems (antes del slice)
+    const lastPage = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage.value))
+    page.value = lastPage
 
-    // Reinicia el formulario
-    procedencia.value = ''
-    formRef.value.resetValidation()
+    // Reinicia el formulario
+    procedencia.value = ''
+    formRef.value.resetValidation()
 
-    utils.loader = false; // Desactiva el loader
-  }
+    utils.loader = false; // Desactiva el loader
+  }
 }
 
 // Búsqueda y Paginación (lógica de la pantalla clase)
 const filteredItems = computed(() => {
-  let filtered = items.value;
-  if (search.value.length >= 3) {
-    const searchTerm = search.value.toLowerCase();
-    filtered = filtered.filter(item =>
-      item.procedencia.toLowerCase().includes(searchTerm)
-    );
-  }
-  return filtered;
+  let filtered = items.value;
+  if (search.value.length >= 3) {
+    const searchTerm = search.value.toLowerCase();
+    filtered = filtered.filter(item =>
+      // Asegúrate de que esta clave coincida con tu backend
+      item.nombre.toLowerCase().includes(searchTerm)
+    );
+  }
+  return filtered;
 });
 
 // Total (para controlar paginación)
 const totalFilteredItems = computed(() => {
-  return filteredItems.value.length;
+  return filteredItems.value.length;
 });
 
 // PAGINACIÓN EN EL PADRE: items que mostramos en la página actual 
 const paginatedItems = computed(() => {
-  const startIndex = (page.value - 1) * itemsPerPage.value
-  const endIndex = startIndex + itemsPerPage.value
-  return filteredItems.value.slice(startIndex, endIndex)
+  const startIndex = (page.value - 1) * itemsPerPage.value
+  const endIndex = startIndex + itemsPerPage.value
+  return filteredItems.value.slice(startIndex, endIndex)
 })
 
 
 // Lógica de Modales y Acciones de la Tabla
 const handleActivate = (item) => {
-  currentItem.value = item
-  showActivateModal.value = true
+  currentItem.value = item
+  showActivateModal.value = true
 }
 
 const handleDeactivate = (item) => {
-  currentItem.value = item
-  showDeactivateModal.value = true
+  currentItem.value = item
+  showDeactivateModal.value = true
 }
 
 const handleDelete = (item) => {
-  console.log('Eliminando registro:', item)
-  items.value = items.value.filter(i => i.procedencia !== item.procedencia)
+  console.log('Eliminando registro:', item)
+  // Usamos el ID del backend para eliminar, si está disponible
+  items.value = items.value.filter(i => i.nombre !== item.nombre)
 }
 
 const confirmDeactivate = async () => {
-  const { valid } = await modalFormRef.value.validate();
-  if (!valid) {
-    return;
-  }
-  
-  utils.loader = true;
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
+  const { valid } = await modalFormRef.value.validate();
+  if (!valid) {
+    return;
+  }
+  
+  utils.loader = true;
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
 
-  const index = items.value.findIndex(i => i.procedencia === currentItem.value.procedencia);
-  if (index !== -1) items.value[index].estado = 'INACTIVO';
-  
-  closeModals();
-  utils.loader = false;
+  const index = items.value.findIndex(i => i.nombre === currentItem.value.nombre);
+  if (index !== -1) items.value[index].estado = 'INACTIVO';
+  
+  closeModals();
+  utils.loader = false;
 }
 
 const confirmActivate = async () => {
-    utils.loader = true;
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
+    utils.loader = true;
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
 
-    const index = items.value.findIndex(i => i.procedencia === currentItem.value.procedencia);
-    if (index !== -1) items.value[index].estado = 'ACTIVO';
+    const index = items.value.findIndex(i => i.nombre === currentItem.value.nombre);
+    if (index !== -1) items.value[index].estado = 'ACTIVO';
 
-    closeModals();
-    utils.loader = false;
+    closeModals();
+    utils.loader = false;
 };
 
 const closeModals = () => {
-  showActivateModal.value = false
-  showDeactivateModal.value = false
-  justificacion.value = ''
-  if (modalFormRef.value) {
-    modalFormRef.value.resetValidation();
-  }
+  showActivateModal.value = false
+  showDeactivateModal.value = false
+  justificacion.value = ''
+  if (modalFormRef.value) {
+    modalFormRef.value.resetValidation();
+  }
 }
 
 function regresarAcatalogos() {
-  router.push({
-    name: 'catalogos'
-  })
+  router.push({
+    name: 'catalogos'
+  })
 }
 
 
 // Cargar datos iniciales
 onMounted(async () => {
-  utils.loader = true;
-  // Simulación de carga (eliminar al conectar)
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  items.value = [
-    { procedencia: 'compra', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
-    { procedencia: 'Donación', register_by: 'Marta Rillo', estado: 'INACTIVO' },
-    { procedencia: 'Pertura', register_by: 'Ana Lisis', estado: 'ACTIVO' },
-    { procedencia: 'compra dos', register_by: 'Ana Lisis', estado: 'INACTIVO' },
-    
-  ];
-  utils.loader = false;
+  // Llama a la función para obtener datos del backend
+  await obtenerProcedencias()
 })
 </script>
 

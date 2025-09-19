@@ -33,6 +33,15 @@ export const ENDPOINTS = {
   },
   DEPENDENCIAS: {
     BASE: '/api/v1/dependencias'
+  },
+  PROCEDENCIAS: {
+    BASE: '/api/v1/admin/catalogs/procedencia-catalogo',
+    GET_ONE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}`,
+    CREATE: '/api/v1/admin/catalogs/procedencia-catalogo',
+    UPDATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}`,
+    DELETE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}`,
+    ACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/activar`,
+    DEACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/desactivar`,
   }
 
 }
