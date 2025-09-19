@@ -284,6 +284,7 @@ onMounted(async () => {
                     v-model="search"
                     variant="solo"
                     label="Buscar"
+                    placeholder="Ingrese procedencia"
                     append-inner-icon="mdi-magnify"
                     :rules="reglasBusqueda"
                     maxlength="50"

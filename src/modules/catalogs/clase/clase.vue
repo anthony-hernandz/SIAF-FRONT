@@ -14,27 +14,13 @@ const display = ref(useDisplay())
 const router = useRouter()
 const utils = useUtilsStore()
 
-// --- Paginación manual ---
+//  Paginación manual 
 const page = ref(1) // Variable que controla la página actual
 const itemsPerPage = ref(5) // Cantidad de elementos por página
 
-// --- Datos de la tabla de ejemplo (simula una respuesta del backend) ---
-const items = ref([
-  { codigo: '001', nombre_clase: 'Clase de Programación', grupo_pertenece:'001 - Grupo de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
-  { codigo: '002', nombre_clase: 'Clase de Marketing', grupo_pertenece: '002 - Grupo de Marketing' , register_by: 'Marta Rillo', estado: 'INACTIVO' },
-  { codigo: '003', nombre_clase: 'Clase de Pruebas', grupo_pertenece: '003- Grupo de Desarrollo' , register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
-  { codigo: '004', nombre_clase: 'Clase de Diseño', grupo_pertenece: '004 - Grupo de Diseño' , register_by: 'Ana Lisis', estado: 'ACTIVO' },
-  { codigo: '005', nombre_clase: 'Clase de Proyectos', grupo_pertenece: '005 - Grupo de Marketing' , register_by: 'Pedro Picapiedra', estado: 'INACTIVO' },
-])
-
-// Datos de ejemplo para el select de Grupos
-const grupos = ref ([
-  { codigo: '001', nombre: "Grupo de Desarrollo"},
-  { codigo: '002', nombre: "Grupo de Marketing" },
-  { codigo: '003', nombre: "Grupo Nuevo"},
-  { codigo: '004', nombre: "Grupo de Pruebas"},
-  { codigo: '005', nombre: "Grupo de Diseño"}
-])
+//  Datos de la tabla de ejemplo (simula una respuesta del backend) 
+const items = ref([]) // Inicializa la tabla vacía
+const grupos = ref([]) // Inicializa el select vacío
 
 // Propiedad computada para formatear los datos del select
 const gruposDisplay = computed(() => grupos.value.map(g => ({
@@ -113,7 +99,7 @@ const agregarClase = async () => {
   }
 }
 
-// --- Lógica de la Tabla y Búsqueda ---
+//  Lógica de la Tabla y Búsqueda
 const reglasBusqueda = [
   v => !v || v.length <= 50 || 'Máximo 50 caracteres',
   v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ0-9\s]+$/.test(v) || 'Solo letras, números y tildes',
@@ -143,7 +129,7 @@ const paginatedItems = computed(() => {
 const totalFilteredItems = computed(() => filteredItemsBySearch.value.length)
 
 
-// Lógica de Modales (Habilitar y Deshabilitar)
+// Lógica de Modales (Habilitar y Deshabilitar) ---
 const showActivateModal = ref(false)
 const showDeactivateModal = ref(false)
 const justificacion = ref('')
@@ -227,8 +213,30 @@ function regresarAcatalogos() {
   })
 }
 
-onMounted(() => {})
-
+// Carga los datos al montar el componente y desactiva el loader
+onMounted(async () => {
+  utils.loader = true // Activa el loader
+  
+  // Simula la carga de datos del backend
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  items.value = [
+    { codigo: '001', nombre_clase: 'Clase de Programación', grupo_pertenece:'001 - Grupo de Desarrollo', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
+    { codigo: '002', nombre_clase: 'Clase de Marketing', grupo_pertenece: '002 - Grupo de Marketing' , register_by: 'Marta Rillo', estado: 'INACTIVO' },
+    { codigo: '003', nombre_clase: 'Clase de Pruebas', grupo_pertenece: '003- Grupo de Desarrollo' , register_by: 'Carlos Sáncez', estado: 'INACTIVO', isNew: true },
+    { codigo: '004', nombre_clase: 'Clase de Diseño', grupo_pertenece: '004 - Grupo de Diseño' , register_by: 'Ana Lisis', estado: 'ACTIVO' },
+  ]
+  
+  grupos.value = [
+    { codigo: '001', nombre: "Grupo de Desarrollo"},
+    { codigo: '002', nombre: "Grupo de Marketing" },
+    { codigo: '003', nombre: "Grupo Nuevo"},
+    { codigo: '004', nombre: "Grupo de Pruebas"},
+    { codigo: '005', nombre: "Grupo de Diseño"}
+  ]
+  
+  utils.loader = false // Desactiva el loader una vez que los datos están cargados
+})
 
 </script>
 
@@ -335,6 +343,7 @@ onMounted(() => {})
                     v-model="search"
                     variant="solo"
                     label="Buscar"
+                    placeholder="Ingrese nombre de la clase"
                     append-inner-icon="mdi-magnify"
                     :rules="reglasBusqueda"
                     maxlength="50"
@@ -346,17 +355,13 @@ onMounted(() => {})
                     :correlativo="false"
                     :items="paginatedItems"
                     :totalItems="totalFilteredItems"
-                    :loading="false"
+                    :loading="utils.loader"
                     v-model:page="page"
                     :items-per-page="itemsPerPage"
                     :customHeader="true"
                   >
-                    <template 
-                    v-slot:item.grupo_pertenece="{ item }">
-                      <span 
-                      v-if="item.grupo_pertenece">
-                      
-                         {{ item.grupo_pertenece.codigo }} - {{ item.grupo_pertenece.nombre }}</span>
+                    <template v-slot:item.grupo_pertenece="{ item }">
+                      <span v-if="item.grupo_pertenece">{{ item.grupo_pertenece }}</span>
                     </template>
                     
                     <template v-slot:estado="{ item }">
@@ -367,9 +372,7 @@ onMounted(() => {})
                           ? 'background: #E5FFE9; border: 1px solid #37AB47'
                           : 'background: #FFE5E5; border: 1px solid #FF4c4c'"
                       >
-                        <span :style="item.estado === 'ACTIVO' ? 'color: #37AB47;' : 'color: #FF4c4c;'">
-                          {{ item.estado }}
-                        </span>
+                        <span>{{ item.estado }}</span>
                       </v-chip>
                     </template>
 

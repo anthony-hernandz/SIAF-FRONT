@@ -37,6 +37,7 @@ const useAuthStore = defineStore('auth', {
         if (response?.status === 200) {
           const { data } = response
           this.user = {
+            id: data.id,
             username: data.username,
             email: data.email
           }

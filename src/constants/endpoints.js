@@ -28,6 +28,12 @@ export const ENDPOINTS = {
     DELETE_USER: (id) => `/api/v1/admin/usuarios/${id}`,
     UPDATE_USER_STATE: (id) => `/api/v1/admin/usuarios/${id}/estado` 
   },
+  CATALOGS: {
+    BASE: '/api/v1/admin/catalogs/tipo-activo-catalogo',
+    DELETE_TIPO_ACTIVO: (id) => `/api/v1/admin/catalogs/tipo-activo-catalogo/${id}`,
+    ACTIVAR_TIPO_ACTIVO: (id) => `/api/v1/admin/catalogs/tipo-activo-catalogo/${id}/activar`,
+    DESACTIVAR_TIPO_ACTIVO: (id) => `/api/v1/admin/catalogs/tipo-activo-catalogo/${id}/desactivar`
+  },
   MENU: {
     GET: '/api/v1/menu'
   },
