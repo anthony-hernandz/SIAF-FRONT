@@ -95,23 +95,29 @@ export default function useTipoActivo() {
     }
   }
 
-  // Activa un tipo de activo por su ID y maneja errores en caso de error
+  // Activa un tipo de activo por su ID, maneja errores en caso de error y muestra notificacion de exito o error
   const activarTipoActivo = async (id) => {
     try {
-      await catalogosServices.activarTipoActivo(id, { confirmar: true })
+      const response = await catalogosServices.activarTipoActivo(id, { confirmar: true });
+      showToastAlert('Tipo de activo ACTIVADO correctamente', 'success');
+      return response;
     } catch (err) {
-      console.error('Error al activar tipo de activo:', err)
-      throw err
+      console.error('Error al activar tipo de activo:', err);
+      showToastAlert(err.response?.data?.message || 'Error al activar el tipo de activo', 'error');
+      throw err;
     }
   }
 
-  // Desactiva un tipo de activo con una justificacion y maneja errores en caso de error
+  // Desactiva un tipo de activo con una justificacion, maneja errores en caso de error y muestra notificacion de exito o error
   const desactivarTipoActivo = async (id, motivo) => {
     try {
-      await catalogosServices.desactivarTipoActivo(id, { justificacion: motivo })
+      const response = await catalogosServices.desactivarTipoActivo(id, { justificacion: motivo });
+      showToastAlert('Tipo de activo DESACTIVADO correctamente', 'success');
+      return response;
     } catch (err) {
-      console.error('Error al desactivar tipo de activo:', err)
-      throw err
+      console.error('Error al desactivar tipo de activo:', err);
+      showToastAlert(err.response?.data?.message || 'Error al desactivar el tipo de activo', 'error');
+      throw err;
     }
   }
 
