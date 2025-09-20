@@ -8,7 +8,8 @@ import AppDialogComponent from '@/components/AppDialogComponent.vue'
 import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
 import AppLoaderComponent from '@/components/AppLoaderComponent.vue'
 import { useRouter } from 'vue-router'
-import procedenciasService from '@/services/procedencias.services' 
+import procedenciasService from '@/services/procedencias.services'
+import AppAlertComponent from '@/components/AppAlertComponent.vue'
 
 // Estado y lógicas
 const { xs, sm, md, lg, xl } = useDisplay()
@@ -38,34 +39,34 @@ const showDeleteModal = ref(false)
 // Cabeceras para la tabla
 // Ajustamos las claves para que coincidan con la respuesta del backend
 const headers = ref([
-  { title: 'Procedencia', align: 'start', key: 'nombre' }, 
-  { title: 'Registrado por', align: 'start', key: 'registro' }, 
-  { title: 'Estado', align: 'center', key: 'estado' },
-  { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
+    { title: 'Procedencia', align: 'start', key: 'nombre' },
+    { title: 'Registrado por', align: 'start', key: 'registro' },
+    { title: 'Estado', align: 'center', value: 'estado' },
+    { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
 ])
 
-// Lógica de Validaciones 
+// Lógica de Validaciones
 const reglasprocedencia = [
-  v => !!v || 'La Procedencia es obligatorio',
-  v => (v && v.length <= 20) || 'El máximo es de 20 caracteres',
-  v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(v) || 'Solo se permiten letras y espacios',
+    v => !!v || 'La Procedencia es obligatorio',
+    v => (v && v.length <= 20) || 'El máximo es de 20 caracteres',
+    v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(v) || 'Solo se permiten letras y espacios',
 ]
 
 const reglasBusqueda = [
-  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
-  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(v) || 'Solo letras, tildes y espacios',
+    v => !v || v.length <= 50 || 'Máximo 50 caracteres',
+    v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(v) || 'Solo letras, tildes y espacios',
 ]
 
 const reglasJustificacion = [
-  v => !!v || 'La justificación es obligatoria.'
+    v => !!v || 'La justificación es obligatoria.'
 ]
 
 // Referencias y estados para el modal de edición
 const showEditModal = ref(false);
 const editFormRef = ref(null);
 const editedProcedencia = ref({
-  id: null,
-  nombre: ''
+    id: null,
+    nombre: ''
 });
 
 // Maneja la acción de edición
@@ -86,10 +87,10 @@ const confirmEdit = async () => {
         const payload = {
             nombre: editedProcedencia.value.nombre
         };
-        
+
         // Llama a la función correcta de tu servicio
         await procedenciasService.actualizarProcedencia(editedProcedencia.value.id, payload);
-        
+
         // Actualiza el registro en la lista local (optimista)
         const index = items.value.findIndex(i => i.id === editedProcedencia.value.id);
         if (index !== -1) {
@@ -111,8 +112,8 @@ const confirmEdit = async () => {
 const closeModals = () => {
     showActivateModal.value = false;
     showDeactivateModal.value = false;
-    showEditModal.value = false; 
-    showDeleteModal.value = false; 
+    showEditModal.value = false;
+    showDeleteModal.value = false;
     justificacion.value = '';
     if (modalFormRef.value) {
         modalFormRef.value.resetValidation();
@@ -124,93 +125,93 @@ const closeModals = () => {
 
 // Función para obtener los datos desde el backend
 const obtenerProcedencias = async () => {
-  utils.loader = true
-  try {
-    // La respuesta del servicio viene dentro de la propiedad 'data'
-    const { data } = await procedenciasService.obtenerProcedencias()
-    // Asignamos la lista de procedencias a 'items.value'
-    items.value = data.procedencia ?? []
-  } catch (error) {
-    console.error('Error al obtener procedencias:', error)
-  } finally {
-    utils.loader = false
-  }
+    utils.loader = true
+    try {
+        // La respuesta del servicio viene dentro de la propiedad 'data'
+        const { data } = await procedenciasService.obtenerProcedencias()
+        // Asignamos la lista de procedencias a 'items.value'
+        items.value = data.procedencia ?? []
+    } catch (error) {
+        console.error('Error al obtener procedencias:', error)
+    } finally {
+        utils.loader = false
+    }
 }
 
 
 // Maneja la acción de agregar un nuevo registro
 const agregarprocedencia = async () => {
-  const { valid } = await formRef.value.validate()
-  if (valid) {
-    utils.loader = true
-    try {
-      const payload = {
-        nombre: procedencia.value,  
-      }
+    const { valid } = await formRef.value.validate()
+    if (valid) {
+        utils.loader = true
+        try {
+            const payload = {
+                nombre: procedencia.value,
+            }
 
-      const { data } = await procedenciasService.crearProcedencia(payload)
+            const { data } = await procedenciasService.crearProcedencia(payload)
 
-      // agregar el registro devuelto a la tabla
-      items.value.push(data)
+            // agregar el registro devuelto a la tabla
+            items.value.push(data)
 
-      // llevar al usuario a la última página
-      const totalItemsCount = filteredItems.value.length
-      const lastPage = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage.value))
-      page.value = lastPage
+            // llevar al usuario a la última página
+            const totalItemsCount = filteredItems.value.length
+            const lastPage = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage.value))
+            page.value = lastPage
 
-      // limpiar formulario
-      procedencia.value = ''
-      formRef.value.resetValidation()
-      utils.showSuccess('Procedencia agregada con exito.'); 
+            // limpiar formulario
+            procedencia.value = ''
+            formRef.value.resetValidation()
+            utils.showSuccess('Procedencia agregada con exito.');
 
-    } catch (error) {
-      console.error('Error al crear procedencia:', error)
-      utils.showError?.('No se pudo registrar la procedencia')
-    } finally {
-      utils.loader = false
+        } catch (error) {
+            console.error('Error al crear procedencia:', error)
+            utils.showError?.('No se pudo registrar la procedencia')
+        } finally {
+            utils.loader = false
+        }
     }
-  }
 }
 
 
 // Búsqueda y Paginación (lógica de la pantalla clase)
 const filteredItems = computed(() => {
-  let filtered = items.value;
-  if (search.value.length >= 3) {
-    const searchTerm = search.value.toLowerCase();
-    filtered = filtered.filter(item =>
-      // Asegúrate de que esta clave coincida con tu backend
-      item.nombre.toLowerCase().includes(searchTerm)
-    );
-  }
-  return filtered;
+    let filtered = items.value;
+    if (search.value.length >= 3) {
+        const searchTerm = search.value.toLowerCase();
+        filtered = filtered.filter(item =>
+            // Asegúrate de que esta clave coincida con tu backend
+            item.nombre.toLowerCase().includes(searchTerm)
+        );
+    }
+    return filtered;
 });
 
 // Total (para controlar paginación)
 const totalFilteredItems = computed(() => {
-  return filteredItems.value.length;
+    return filteredItems.value.length;
 });
 
-// PAGINACIÓN EN EL PADRE: items que mostramos en la página actual 
+// PAGINACIÓN EN EL PADRE: items que mostramos en la página actual
 const paginatedItems = computed(() => {
-  const startIndex = (page.value - 1) * itemsPerPage.value
-  const endIndex = startIndex + itemsPerPage.value
-  return filteredItems.value.slice(startIndex, endIndex)
+    const startIndex = (page.value - 1) * itemsPerPage.value
+    const endIndex = startIndex + itemsPerPage.value
+    return filteredItems.value.slice(startIndex, endIndex)
 })
 
 
 // Lógica de Modales y Acciones de la Tabla
 const handleActivate = (item) => {
-  // 1. Almacena el ítem actual en una variable de estado.
-  currentItem.value = item;
-  // 2. Cambia el estado para mostrar el modal.
-  showActivateModal.value = true;
+    // 1. Almacena el ítem actual en una variable de estado.
+    currentItem.value = item;
+    // 2. Cambia el estado para mostrar el modal.
+    showActivateModal.value = true;
 };
 
 
 const handleDeactivate = (item) => {
-  currentItem.value = item
-  showDeactivateModal.value = true
+    currentItem.value = item
+    showDeactivateModal.value = true
 }
 
 const handleDelete = (item) => {
@@ -222,7 +223,7 @@ const handleDelete = (item) => {
 const confirmDelete = async () => {
     try {
         utils.loader = true;
-        await procedenciasService.eliminarProcedencia(currentItem.value.id); 
+        await procedenciasService.eliminarProcedencia(currentItem.value.id);
         items.value = items.value.filter(i => i.id !== currentItem.value.id);
         closeModals();
         utils.showSuccess('Registro eliminado con éxito.');
@@ -234,61 +235,91 @@ const confirmDelete = async () => {
     }
 };
 
+// ** CAMBIO APLICADO AQUÍ **
 const confirmActivate = async () => {
-  try {
-    utils.loader = true
-    await procedenciasService.activarProcedencia(currentItem.value.id, { confirmar: true }); 
-    const index = items.value.findIndex(i => i.id === currentItem.value.id)
-    if (index !== -1) items.value[index].estado = 'ACTIVO'
-    closeModals()
-  } catch (error) {
-    console.error('Error al activar:', error)
-    utils.showError?.('No se pudo activar el registro')
-  } finally {
-    utils.loader = false
-  }
-}
+    try {
+        utils.loader = true;
+        await procedenciasService.activarProcedencia(currentItem.value.id, { confirmar: true });
+        
+        const index = items.value.findIndex(i => i.id === currentItem.value.id);
+        if (index !== -1) {
+            // Reemplaza el objeto en la lista con una nueva copia que tiene el estado 'ACTIVO'
+            items.value.splice(index, 1, { ...items.value[index], estado: 'ACTIVO' });
+        }
+        
+        closeModals();
+        utils.showSuccess('Registro activado con éxito.');
+    } catch (error) {
+        console.error('Error al activar:', error);
+        utils.showError?.('No se pudo activar el registro');
+    } finally {
+        utils.loader = false;
+    }
+};
 
+// ** CAMBIO APLICADO AQUÍ **
 const confirmDeactivate = async () => {
-  const { valid } = await modalFormRef.value.validate()
-  if (!valid) return
+    const { valid } = await modalFormRef.value.validate();
+    if (!valid) return;
 
-  try {
-    utils.loader = true
-    await procedenciasService.desactivarProcedencia(currentItem.value.id, {
-      justificacion: justificacion.value
-    })
-    const index = items.value.findIndex(i => i.id === currentItem.value.id)
-    if (index !== -1) items.value[index].estado = 'INACTIVO'
-    closeModals()
-  } catch (error) {
-    console.error('Error al desactivar:', error)
-    utils.showError?.('No se pudo inactivar el registro')
-  } finally {
-    utils.loader = false
-  }
-}
-
-
-
+    try {
+        utils.loader = true;
+        await procedenciasService.desactivarProcedencia(currentItem.value.id, {
+            justificacion: justificacion.value
+        });
+        
+        const index = items.value.findIndex(i => i.id === currentItem.value.id);
+        if (index !== -1) {
+            // Reemplaza el objeto en la lista con una nueva copia que tiene el estado 'INACTIVO'
+            items.value.splice(index, 1, { ...items.value[index], estado: 'INACTIVO' });
+        }
+        
+        closeModals();
+        utils.showSuccess('Registro inactivado con éxito.');
+    } catch (error) {
+        console.error('Error al desactivar:', error);
+        utils.showError?.('No se pudo inactivar el registro');
+    } finally {
+        utils.loader = false;
+    }
+};
 
 function regresarAcatalogos() {
-  router.push({
-    name: 'catalogos'
-  })
+    router.push({
+        name: 'catalogos'
+    })
 }
 
 
 // Cargar datos iniciales
 onMounted(async () => {
-  // Llama a la función para obtener datos del backend
-  await obtenerProcedencias()
+    // Llama a la función para obtener datos del backend
+    await obtenerProcedencias()
 })
 </script>
 
 <template>
   <div>
     <app-loader-component />
+    <app-alert-component />
+
+    <v-snackbar
+  v-model="showSnackbar"
+  timeout="3000"
+  :color="color"
+  location="top right"
+  elevation="6"
+>
+  <div class="d-flex align-center justify-space-between" style="width: 100%;">
+    <div class="d-flex align-center">
+      <v-icon :icon="icon" class="mr-2"></v-icon>
+      {{ utils.message }}
+    </div>
+    <v-btn icon @click="showSnackbar = false">
+      <v-icon>mdi-close</v-icon>
+    </v-btn>
+  </div>
+</v-snackbar>
 
     <app-dialog-component
       :show="showActivateModal"
@@ -318,8 +349,7 @@ onMounted(async () => {
         class="text-center bg-warningBackground pa-4 rounded"
         style="border: 1px solid #FFC107;"
       >
-        ¿Está seguro que desea inactivar el registro?<br />
-        Ingrese la justificación de la acción:
+        ¿Está seguro que desea inactivar el registro?
       </p>
       <v-textarea
         v-model="justificacion"
@@ -363,7 +393,7 @@ onMounted(async () => {
     @confirm="confirmDelete"
 >
     <template #body>
-        <p class="text-center bg-dangerBackground pa-4 rounded" style="border: 1px solid #FF5252;">
+        <p class="text-center bg-warningBackground pa-4 rounded" style="border: 1px solid #FFC107;">
             ¿Está seguro que desea eliminar este registro?
         </p>
     </template>
@@ -429,36 +459,35 @@ onMounted(async () => {
                     :items-per-page="itemsPerPage"
                     :customHeader="true"
                   >
-             
-<!-- <template v-slot:estado="{ item }">
-  <template v-if="item.estado  === 'Activo'">
+
+ <template v-slot:estado="{ item }">
+  <template v-if="item.estado?.toUpperCase()  === 'ACTIVO'">
     <v-chip
       label
       size="small"
       class="font-weight-bold"
       style="background-color: #E5FFE9; color: #37AB47; border: 1px solid #9AECA4;"
     >
-      Activo
+      ACTIVO
     </v-chip>
   </template>
-  <template v-else-if="item.estado === 'Inactivo'">
+  <template v-else-if="item.estado?.toUpperCase() === 'INACTIVO'">
     <v-chip
       label
       size="small"
       class="font-weight-bold"
       style="background-color: #FCF2F2; color: #B94A48; border: 1px solid #E63946;"
     >
-      Inactivos
+      INACTIVO
     </v-chip>
   </template>
-</template>  -->
+</template>
 
 
 
 
                      <template v-slot:actions="{ item }">
-  <!-- Eliminar: solo si está INACTIVO y sigue siendo NUEVO -->
-  <app-button-action-table-component
+   <app-button-action-table-component
     v-if="item.estado?.toUpperCase() === 'INACTIVO' && item.es_nuevo"
     text="Eliminar"
     icon="mdi-trash-can-outline"
@@ -467,8 +496,7 @@ onMounted(async () => {
     @btnAction="handleDelete(item)"
   />
 
-  <!-- Activar: disponible si está INACTIVO -->
-  <app-button-action-table-component
+   <app-button-action-table-component
     v-if="item.estado?.toUpperCase() === 'INACTIVO'"
     text="Habilitar registro"
     icon="mdi-check-circle-outline"
@@ -477,8 +505,7 @@ onMounted(async () => {
     @btnAction="handleActivate(item)"
   />
 
-  <!-- Desactivar: disponible si está ACTIVO -->
-  <app-button-action-table-component
+   <app-button-action-table-component
     v-if="item.estado?.toUpperCase() === 'ACTIVO'"
     text="Deshabilitar registro"
     icon="mdi-cancel"
@@ -486,8 +513,7 @@ onMounted(async () => {
     color="warning"
     @btnAction="handleDeactivate(item)"
   />
-<!-- Editar usuario -->
-  <app-button-action-table-component
+<app-button-action-table-component
   v-if="!item.es_nuevo"
     text="Editar registro"
     icon="mdi-pencil-outline"
@@ -496,6 +522,8 @@ onMounted(async () => {
     @btnAction="handleEdit(item)"
 />
 </template>
+              
+
 
                   </app-data-table-component>
                 </v-col>
