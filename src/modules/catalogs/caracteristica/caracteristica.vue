@@ -1,68 +1,53 @@
 <script setup>
 import { useDisplay } from 'vuetify/lib/framework.mjs'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppRightFromCatalaogComponent from '@/components/AppRightFormCatalogComponent.vue'
 import AppDataTableComponent from '@/components/AppDataTableComponent.vue'
-const { xs, sm, md, lg, xl } = useDisplay()
+import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
+import AppLoaderComponent from '@/components/AppLoaderComponent.vue'
+import useCaracteristicas from './composables/useCaracteristicas.js'
+
+
+const { xs, sm, md } = useDisplay()
 const display = ref(useDisplay())
 
-let items = [
-  {
-    caracteristica: 'A',
-    tipo_activo_aplica:'A',
-    register_by: "Aquiles Vengo",
-    estado: "ACTIVO",
-   
-  },
-  {
-    caracteristica: 'A',
-    tipo_activo_aplica:'A',
-    register_by: "Aquiles Vengo",
-    estado: "ACTIVO",
- 
-  },
-  {
-    caracteristica: 'A',
-    tipo_activo_aplica:'A',
-    register_by: "Aquiles Vengo",
-    estado: "ACTIVO",
-    
-  },
-  {
-    caracteristica: 'A',
-    tipo_activo_aplica:'A',
-    register_by: "Aquiles Vengo",
-    estado: "ACTIVO",
-  
-  },
-  {
-    caracteristica: 'A',
-    tipo_activo_aplica:'A',
-    register_by: "Aquiles Vengo",
-    estado: "ACTIVO",
-   
-  },
- 
-]
+// composable
+const { caracteristicas, loading, obtenerCaracteristicas } = useCaracteristicas()
 
-let headers = [
-  { title: 'Característica', align: 'center', key: 'caracteristica'},
-  { title: 'Tipo activo aplica', align: 'center', key: 'tipo_activo_aplica'},
-  { title: 'Registrado por', align: 'center', key: 'register_by'},
-  { title: 'Estado', align: 'center', key: 'estado',value:'estado' },
+// búsqueda
+const search = ref('')
+
+const headers = [
+  { title: 'Característica', align: 'center', key: 'nombre' },
+  { title: 'Tipo de activo al que aplica', align: 'center', key: 'tipoActivo.nombre' },
+  { title: 'Persona que registró', align: 'center', key: 'registro' },
+  { title: 'Estado', align: 'center', key: 'estado' },
   { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
 ]
 
-onMounted(() => {})
+const filteredItems = computed(() => {
+  if (!search.value) return caracteristicas.value
+  return caracteristicas.value.filter(item =>
+    item.nombre?.toLowerCase().includes(search.value.toLowerCase()) ||
+    item.tipoActivo?.nombre?.toLowerCase().includes(search.value.toLowerCase()) ||
+    item.registro?.toLowerCase().includes(search.value.toLowerCase()) ||
+    item.estado?.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
+
+onMounted(() => {
+  obtenerCaracteristicas()
+})
 </script>
 
 <template>
   <div>
-    <app-loader-component />
+    <app-loader-component v-if="loading" />
 
     <v-container fluid class="mb-8">
-
-      <v-row justify="center"  :class="display.xs || display.sm || display.md ? 'mb-8':''">
+      <v-row justify="center" :class="display.xs || display.sm || display.md ? 'mb-8':''">
+        
+        <!-- Formulario lateral -->
         <v-col cols="12" xl="4" lg="3" sm="12" md="4">
           <v-card
             :elevation="0"
@@ -74,10 +59,12 @@ onMounted(() => {})
               <template #myCatalog>
                 <v-text-field variant="solo" label="Nombre de característica: *"></v-text-field>
                 <v-select variant="solo" label="Tipo activo:" :items="['a','b','c']"></v-select>
-            </template>
+              </template>
             </app-right-from-catalaog-component>
           </v-card>
         </v-col>
+
+        <!-- Tabla -->
         <v-col cols="12" xl="6" lg="7" sm="12" md="8">
           <v-card
             :elevation="0"
@@ -86,45 +73,72 @@ onMounted(() => {})
             style="border: 1px solid #6a83be"
           >
             <v-row justify="center">
-              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12" class="text-center">
+              <v-col cols="12" class="text-center">
                 <div class="bg-secondaryBackground py-2" style="border-radius: 7px;border: 1px solid #111E60;">
                   <p>Listado</p>
                 </div>
               </v-col>
-              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
-                <v-text-field variant="solo" label="Buscar" appendInnerIcon="mdi-magnify"></v-text-field>
+
+              <!-- Buscador -->
+              <v-col cols="12">
+                <v-text-field
+                  v-model="search"
+                  variant="solo"
+                  label="Buscar"
+                  appendInnerIcon="mdi-magnify"
+                />
               </v-col>
-              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
+
+              <!-- Data Table -->
+              <v-col cols="12">
                 <app-data-table-component
                   :headers="headers"
                   :correlativo="false"
-                  :items="items"
-                  :totalItems="items.length"
-                  :loading="false"
+                  :items="filteredItems"
+                  :totalItems="filteredItems.length"
+                  :loading="loading"
                   :itemsPerPage="5"
                   :customHeader="true"
                 >
-                <template v-slot:estado="{ item }">
-                  <div>
-                    <v-chip label size="small" style="background: #E5FFE9;border: 1px solid #37AB47 !important">
-                      <span class="text-successT">{{ item.estado }}</span></v-chip>
-                  </div>
-              </template>
-                <template v-slot:actions="{ item }">
-                <app-button-action-table-component
-                  text="Editar"
-                  icon="mdi-pencil-outline"
-                  size="small"
-                />
-                <app-button-action-table-component
-                  text="Eliminar"
-                  icon="mdi-trash-can-outline"
-                  size="small"
-                />
-              </template>
-              </app-data-table-component>
+                  <!-- TipoActivo -->
+                  <template v-slot:tipoActivo="{ item }">
+                    {{ item.tipoActivo?.nombre }}
+                  </template>
+
+                  <!-- Estado -->
+                  <template v-slot:estado="{ item }">
+                    <div>
+                      <v-chip
+                        label
+                        size="small"
+                        :style="item.estado === 'Activo'
+                          ? 'background: #E5FFE9; border: 1px solid #37AB47 !important'
+                          : 'background: #FFE5E5; border: 1px solid #AB3737 !important'"
+                      >
+                        <span :class="item.estado === 'Activo' ? 'text-successT' : 'text-errorT'">
+                          {{ item.estado }}
+                        </span>
+                      </v-chip>
+                    </div>
+                  </template>
+
+                  <!-- Acciones -->
+                  <template v-slot:actions="{ item }">
+                    <app-button-action-table-component
+                      text="Editar"
+                      icon="mdi-pencil-outline"
+                      size="small"
+                    />
+                    <app-button-action-table-component
+                      text="Eliminar"
+                      icon="mdi-trash-can-outline"
+                      size="small"
+                    />
+                  </template>
+                </app-data-table-component>
               </v-col>
 
+              <!-- Botón regresar -->
               <v-col cols="11" class="text-end">
                 <v-btn color="primaryBackground" variant="outlined">Regresar</v-btn>
               </v-col>

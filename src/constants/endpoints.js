@@ -48,6 +48,15 @@ export const ENDPOINTS = {
     DELETE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}`,
     ACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/activar`,
     DEACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/desactivar`,
+  },
+  CARACTERISTICAS: {
+    BASE: '/api/v1/admin/catalogs/caracteristicas-catalogo',
+    GET_ONE: (id) => `/api/v1/admin/catalogs/caracteristicas-catalogo/${id}`,
+    CREATE: '/api/v1/admin/catalogs/caracteristicas-catalogo',
+    UPDATE: (id) => `/api/v1/admin/catalogs/caracteristicas-catalogo/${id}`,
+    DELETE: (id) => `/api/v1/admin/catalogs/caracteristicas-catalogo/${id}`,
+    ACTIVATE: (id) => `/api/v1/admin/catalogs/caracteristicas-catalogo/${id}/activar`,
+    DEACTIVATE: (id) => `/api/v1/admin/catalogs/caracteristicas-catalogo/${id}/desactivar`
   }
 
 }
