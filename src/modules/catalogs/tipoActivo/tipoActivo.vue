@@ -16,7 +16,8 @@ const {
   guardarTipoActivo,
   eliminarTipoActivo,
   activarTipoActivo,
-  desactivarTipoActivo
+  desactivarTipoActivo,
+  buscarTipoActivo
 } = useTipoActivo()
 
 const { xs, sm, md, lg, xl } = useDisplay()
@@ -29,6 +30,7 @@ const tipoActivoSeleccionado = ref(null)    // Guarda el tipo activo seleccionad
 const accionConfirmar = ref('')             // Controla la accion a realizar: eliminar, activar o desactivar
 const justificacion = ref('')               // Almacena el mesnaje de justificacion ingresado por el usuario al desactivar
 const errorJustificacion = ref('')          // Mensaje de error en el modal si la justificacion es invalida o vacia
+const searchTerm = ref('')  // Valor ingresado en el buscador
 
 // Al cargar la vista, obtiene todos los tipos de activo
 onMounted(async () => {
@@ -130,7 +132,13 @@ function regresarAcatalogos() {
                 </div>
               </v-col>
               <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
-                <v-text-field variant="solo" label="Ingrese tipo de activo" appendInnerIcon="mdi-magnify"></v-text-field>
+                <v-text-field
+                  v-model="searchTerm"
+                  variant="solo"
+                  label="Ingrese tipo de activo"
+                  appendInnerIcon="mdi-magnify"
+                  @input="() => buscarTipoActivo(searchTerm)"
+                />
               </v-col>
               <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
               <!-- Componente de tabla que muestra los tipos de activo con paginación, loader, y encabezado personalizado -->
