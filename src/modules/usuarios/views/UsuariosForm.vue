@@ -6,7 +6,7 @@ import dependenciaService from '@/services/dependencias.services';
 import { useRouter } from 'vue-router';
 
 const {
-  usuario, // Asumiendo que `usuario` es un `ref` desde tu composable
+  usuario,
   paises,
   obtenerPaises,
   obtenerPerfiles,

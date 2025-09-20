@@ -11,9 +11,10 @@ const actualizarProcedencia = async (id, data) => network.put(ENDPOINTS.PROCEDEN
 
 const eliminarProcedencia = async (id) => network.delete(ENDPOINTS.PROCEDENCIAS.DELETE(id))
 
-const activarProcedencia = async (id) => network.patch(ENDPOINTS.PROCEDENCIAS.ACTIVATE(id))
+const activarProcedencia = async (id, data) => network.patch(ENDPOINTS.PROCEDENCIAS.ACTIVATE(id), data)
 
-const desactivarProcedencia = async (id) => network.patch(ENDPOINTS.PROCEDENCIAS.DEACTIVATE(id))
+const desactivarProcedencia = async (id, data) => network.patch(ENDPOINTS.PROCEDENCIAS.DEACTIVATE(id), data)
+
 
 export default {
   obtenerProcedencias,
