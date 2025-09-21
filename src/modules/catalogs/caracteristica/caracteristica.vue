@@ -31,6 +31,10 @@ const deleteDialogVisible = ref(false)
 const itemToDelete = ref(null)
 const loadingDelete = ref(false)
 
+// Paginación
+const page = ref(1)
+const itemsPerPage = ref(5)
+
 const headers = [
   { title: 'Característica', align: 'center', key: 'nombre' },
   { title: 'Tipo de activo al que aplica', align: 'center', key: 'tipoActivo.nombre' },
@@ -40,16 +44,28 @@ const headers = [
 ]
 
 const filteredItems = computed(() => {
-  if (!search.value) return caracteristicas.value
-  return caracteristicas.value.filter(item =>
+  if (!caracteristicas.value) return []
+  
+  let items = caracteristicas.value.filter(item =>
     item.nombre?.toLowerCase().includes(search.value.toLowerCase()) ||
     item.tipoActivo?.nombre?.toLowerCase().includes(search.value.toLowerCase()) ||
     item.registro?.toLowerCase().includes(search.value.toLowerCase()) ||
     item.estado?.toLowerCase().includes(search.value.toLowerCase())
   )
+  return items
 })
 
-// Form para nueva característica (input + select)
+const paginatedItems = computed(() => {
+  const startIndex = (page.value - 1) * itemsPerPage.value
+  const endIndex = startIndex + itemsPerPage.value
+  return filteredItems.value.slice(startIndex, endIndex)
+})
+
+const totalItemsFiltered = computed(() => {
+  return filteredItems.value.length
+})
+
+// Form para nueva característica 
 const form = ref({
   nombre: '',
   tipoActivoId: null
@@ -96,7 +112,6 @@ const agregarCaracteristica = async () => {
 
 // Abre el diálogo de edición con los datos del ítem
 const openEditDialog = (item) => {
-  console.log("Abriendo modal de edición con el siguiente item:", item); // Agregado para depuración
   editedItem.value = { ...item, tipoActivoId: item.tipoActivo?.id }
   dialogVisible.value = true
 }
@@ -192,7 +207,10 @@ onMounted(() => {
             class="px-7 py-7"
             style="border: 1px solid #6a83be; height: 100% !important"
           >
-            <app-right-form-catalog-component>
+            <app-right-form-catalog-component
+              @save="agregarCaracteristica"
+
+            >
               <template #myCatalog>
                 <!-- Input -->
                 <v-text-field
@@ -214,16 +232,7 @@ onMounted(() => {
                   persistent-hint
                 />
 
-                <!-- Botón Agregar -->
-                <v-btn
-                  color="primaryBackground"
-                  class="mt-4"
-                  block
-                  @click="agregarCaracteristica"
-                  :loading="loading"
-                >
-                  Agregar
-                </v-btn>
+                
               </template>
             </app-right-form-catalog-component>
           </v-card>
@@ -259,11 +268,12 @@ onMounted(() => {
                 <app-data-table-component
                   :headers="headers"
                   :correlativo="false"
-                  :items="filteredItems"
-                  :totalItems="filteredItems.length"
+                  :items="paginatedItems"
+                  :totalItems="totalItemsFiltered"
                   :loading="loading"
-                  :itemsPerPage="5"
+                  :items-per-page="itemsPerPage"
                   :customHeader="true"
+                  v-model:page="page"
                 >
                   <!-- TipoActivo -->
                   <template v-slot:tipoActivo="{ item }">
@@ -288,13 +298,25 @@ onMounted(() => {
 
                   <!-- Acciones -->
                   <template v-slot:actions="{ item }">
+                    <!-- Botón Editar: solo si NO es nuevo -->
                     <app-button-action-table-component
+                      v-if="!item.es_nuevo"
                       text="Editar"
                       icon="mdi-pencil-outline"
                       size="small"
                       @btnAction="openEditDialog(item)"
                     />
-                    <!-- Botón de activar/desactivar -->
+
+                    <!-- Botón Eliminar: solo si es nuevo -->
+                    <app-button-action-table-component
+                      v-if="item.es_nuevo"
+                      text="Eliminar"
+                      icon="mdi-trash-can-outline"
+                      size="small"
+                      @btnAction="confirmDelete(item)"
+                    />
+
+                    <!-- Botón Activar/Desactivar: según estado -->
                     <app-button-action-table-component
                       v-if="item.estado === 'Activo'"
                       text="Desactivar"
@@ -311,16 +333,12 @@ onMounted(() => {
                       color="success"
                       @btnAction="handleActivar(item)"
                     />
-                    <!-- Botón de eliminar -->
-                    <app-button-action-table-component
-                      text="Eliminar"
-                      icon="mdi-trash-can-outline"
-                      size="small"
-                      @btnAction="confirmDelete(item)"
-                    />
                   </template>
+
                 </app-data-table-component>
               </v-col>
+              
+              
 
               <!-- Botón regresar -->
               <v-col cols="11" class="text-end">
