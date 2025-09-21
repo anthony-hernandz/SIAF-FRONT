@@ -17,14 +17,15 @@ export default function useTipoActivo() {
   const loading = ref(false)                                            // Indica si esta cargando informacion para la vista
   const sendRequest = ref(false)                                        // Indica que esta enviando una solicitud para deshabilitar los botones en el proceso
   const tipoActivo = ref({ id: null, nombre: '', estado: 'Activo' })    // Almacena temporalmente los datos de un nuevo tipo activo
+  const searchTimeout = ref(null)
 
   // Obtiene todos los tipos de activo, limpia la lista actual, llena la tabla con los resultados y controla el estado de carga
-  const obtenerTipoActivos = async () => {
+  const obtenerTipoActivos = async (params = {}) => {
     loading.value = true
     items.value = []
 
     try {
-      const { data: response } = await catalogosServices.obtenerTiposActivo()
+      const { data: response } = await catalogosServices.obtenerTiposActivo(params)
       const resultados = response?.tipoactivo || response?.tipoActivos || response?.tipoActivo || []
 
       for (let i = 0; i < resultados.length; i++) {
@@ -121,6 +122,30 @@ export default function useTipoActivo() {
     }
   }
 
+  // Búsqueda y alerta si el valor es menor de 3 caracteres
+  const buscarTipoActivo = (search) => {
+    if (searchTimeout.value) clearTimeout(searchTimeout.value)
+
+    searchTimeout.value = setTimeout(async () => {
+      if (search && search.length < 4) {
+        items.value = []
+        showToastAlert('El término de búsqueda debe tener al menos 3 caracteres', 'error')
+        return
+      }
+
+      if (search && search.length > 50) {
+        showToastAlert('El término de búsqueda no puede exceder 50 caracteres', 'error')
+        return
+      }
+
+      try {
+        await obtenerTipoActivos({ nombre: search })
+      } catch (err) {
+        console.error('Error al buscar tipo de activo:', err)
+      }
+    }, 500) // espera 500ms después de dejar de escribir
+  }
+
   return {
     headers,
     items,
@@ -131,6 +156,7 @@ export default function useTipoActivo() {
     guardarTipoActivo,
     eliminarTipoActivo,
     activarTipoActivo,
-    desactivarTipoActivo
+    desactivarTipoActivo,
+    buscarTipoActivo
   }
 }
