@@ -49,7 +49,7 @@ export default function useTipoActivo() {
   // Crea un nuevo tipo de activo, valida que tenga nombre, envia los datos, actualiza la tabla y muestra notificacion de exito o de error
   const guardarTipoActivo = async () => {
     if (!tipoActivo.value.nombre || !tipoActivo.value.nombre.trim()) {
-      console.warn('Nombre vacio')
+      showToastAlert('El tipo de activo es obligatorio', 'error')
       return
     }
 

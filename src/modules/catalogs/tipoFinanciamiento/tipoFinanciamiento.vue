@@ -1,371 +1,262 @@
 <script setup>
 import { useDisplay } from 'vuetify/lib/framework.mjs'
 import { ref, onMounted, computed } from 'vue'
-import useUtilsStore from '@/store/utils'
 import AppRightFromCatalaogComponent from '@/components/AppRightFormCatalogComponent.vue'
 import AppDataTableComponent from '@/components/AppDataTableComponent.vue'
-import AppDialogComponent from '@/components/AppDialogComponent.vue'
-import AppButtonActionTableComponent from '@/components/AppButtonActionTableComponent.vue'
-import AppLoaderComponent from '@/components/AppLoaderComponent.vue'
+import useTipoFinanciamiento from './composable/useTipoFinanciamiento'
 import { useRouter } from 'vue-router'
 
-// Estado y lógicas
+// Variables y funciones de `useTipoFinanciamiento` para manejar datos, estado y acciones de los tipos de financiamiento
+const { 
+  headers,
+  items,
+  loading,
+  tipoFinanciamiento,
+  obtenerTiposFinanciamiento,
+  guardarTipoFinanciamiento,
+  eliminarTipoFinanciamiento,
+  activarTipoFinanciamiento,
+  desactivarTipoFinanciamiento,
+  buscarTipoFinanciamiento
+} = useTipoFinanciamiento()
+
 const { xs, sm, md, lg, xl } = useDisplay()
 const display = ref(useDisplay())
 const router = useRouter()
-const utils = useUtilsStore()
+const itemsPerPage = ref(6)                         // Cantidad de datos que se muestran por pagina en la tabla
+const page = ref(1)                                 // Pagina actual de la tabla
+const showConfirmDialog = ref(false)                // Controla la visibilidad del modal
+const tipoFinanciamientoSeleccionado = ref(null)    // Guarda el tipo financiamiento seleccionado para mostrarlo en el modal
+const accionConfirmar = ref('')                     // Controla la accion a realizar: eliminar, activar o desactivar
+const justificacion = ref('')                       // Almacena el mesnaje de justificacion ingresado por el usuario al desactivar
+const errorJustificacion = ref('')                  // Mensaje de error en el modal si la justificacion es invalida o vacia
+const searchTerm = ref('')                          // Valor ingresado en el buscador
 
-// Paginación manual para la tabla
-const page = ref(1)
-const itemsPerPage = ref(5)
-const items = ref([]) // Inicializamos la tabla vacía
-const search = ref('')
-const tipoFinanciamiento = ref('')
-
-// Referencia al formulario de registro
-const formRef = ref(null)
-
-// Referencias y estados para los modales
-const showActivateModal = ref(false)
-const showDeactivateModal = ref(false)
-const justificacion = ref('')
-const currentItem = ref(null)
-const modalFormRef = ref(null)
-
-// Cabeceras para la tabla
-const headers = ref([
-  { title: 'Tipo de financiamiento', align: 'start', key: 'tipo_financiamiento' },
-  { title: 'Registrado por', align: 'start', key: 'register_by' },
-  { title: 'Estado', align: 'center', value: 'estado' },
-  { title: 'Acciones', value: 'actions', align: 'center', sortable: false }
-])
-
-// Lógica de Validaciones 
-const reglasFinanciamiento = [
-  v => !!v || 'El tipo de financiamiento es obligatorio',
-  v => (v && v.length <= 20) || 'El máximo es de 20 caracteres',
-  v => /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(v) || 'Solo se permiten letras y espacios',
-]
-
-const reglasBusqueda = [
-  v => !v || v.length <= 50 || 'Máximo 50 caracteres',
-  v => !v || /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(v) || 'Solo letras, tildes y espacios',
-]
-
-const reglasJustificacion = [
-  v => !!v || 'La justificación es obligatoria.'
-]
-
-
-// Maneja la acción de agregar un nuevo registro
-const agregarFinanciamiento = async () => {
-  const { valid } = await formRef.value.validate()
-  if (valid) {
-    utils.loader = true; // Activa el loader
-    
-    // Simulación de una respuesta del backend (eliminar al conectar)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newFinanciamiento = {
-      tipo_financiamiento: tipoFinanciamiento.value,
-      register_by: 'Usuario Logueado', // Esto vendría del backend
-      estado: 'INACTIVO', // por defecto
-      isNew: true
-    }
-    items.value.push(newFinanciamiento)
-
-    // MOVER a la última página automáticamente 
-    const totalItemsCount = filteredItems.value.length // usa filteredItems (antes del slice)
-    const lastPage = Math.max(1, Math.ceil(totalItemsCount / itemsPerPage.value))
-    page.value = lastPage
-
-    // Reinicia el formulario
-    tipoFinanciamiento.value = ''
-    formRef.value.resetValidation()
-
-    utils.loader = false; // Desactiva el loader
-  }
-}
-
-// Búsqueda y Paginación (lógica de la pantalla clase)
-const filteredItems = computed(() => {
-  let filtered = items.value;
-  if (search.value.length >= 3) {
-    const searchTerm = search.value.toLowerCase();
-    filtered = filtered.filter(item =>
-      item.tipo_financiamiento.toLowerCase().includes(searchTerm)
-    );
-  }
-  return filtered;
-});
-
-// Total (para controlar paginación)
-const totalFilteredItems = computed(() => {
-  return filteredItems.value.length;
-});
-
-// PAGINACIÓN EN EL PADRE: items que mostramos en la página actual 
-const paginatedItems = computed(() => {
-  const startIndex = (page.value - 1) * itemsPerPage.value
-  const endIndex = startIndex + itemsPerPage.value
-  return filteredItems.value.slice(startIndex, endIndex)
+// Al cargar la vista, obtiene todos los tipos de financiamiento
+onMounted(async () => {
+  await obtenerTiposFinanciamiento()
 })
 
+// Obtiene los tipos de financiamiento que se mostraran en la pagina actual según la paginacion
+const paginatedItems = computed(() => {
+  const start = (page.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return items.value.slice(start, end)
+})
 
-// Lógica de Modales y Acciones de la Tabla
-const handleActivate = (item) => {
-  currentItem.value = item
-  showActivateModal.value = true
+// Cambia la pagina que se muestra en la tabla cuando el usuario selecciona otra
+const cambiarPagina = (nuevaPagina) => {
+  page.value = nuevaPagina
 }
 
-const handleDeactivate = (item) => {
-  currentItem.value = item
-  showDeactivateModal.value = true
-}
-
-const handleDelete = (item) => {
-  console.log('Eliminando registro:', item)
-  items.value = items.value.filter(i => i.tipo_financiamiento !== item.tipo_financiamiento)
-}
-
-const confirmDeactivate = async () => {
-  const { valid } = await modalFormRef.value.validate();
-  if (!valid) {
-    return;
-  }
-  
-  utils.loader = true;
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
-
-  const index = items.value.findIndex(i => i.tipo_financiamiento === currentItem.value.tipo_financiamiento);
-  if (index !== -1) items.value[index].estado = 'INACTIVO';
-  
-  closeModals();
-  utils.loader = false;
-}
-
-const confirmActivate = async () => {
-    utils.loader = true;
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
-
-    const index = items.value.findIndex(i => i.tipo_financiamiento === currentItem.value.tipo_financiamiento);
-    if (index !== -1) items.value[index].estado = 'ACTIVO';
-
-    closeModals();
-    utils.loader = false;
-};
-
-const closeModals = () => {
-  showActivateModal.value = false
-  showDeactivateModal.value = false
+// Prepara modal para activar o desactivar un tipo de financiamiento en base a su estado actual
+function cambiarEstado(item) {
+  tipoFinanciamientoSeleccionado.value = item
+  accionConfirmar.value = item.estado === 'activo' ? 'desactivar' : 'activar'
+  showConfirmDialog.value = true
   justificacion.value = ''
-  if (modalFormRef.value) {
-    modalFormRef.value.resetValidation();
+  errorJustificacion.value = ''
+}
+
+// Prepara el modal para eliminar un tipo de financiamiento
+function eliminarTipoFinanciamientoConfirm(item) {
+  tipoFinanciamientoSeleccionado.value = item
+  accionConfirmar.value = 'eliminar'
+  showConfirmDialog.value = true
+}
+
+// Ejecuta la accion de activar, desactivar o eliminar un tipo de financiamiento según corresponda, actualiza la tabla y valida la justificacion
+async function confirmarAccion() {
+  if (!tipoFinanciamientoSeleccionado.value) return
+  try {
+    if (accionConfirmar.value === 'activar') {
+      await activarTipoFinanciamiento(tipoFinanciamientoSeleccionado.value.id)
+    } else if (accionConfirmar.value === 'desactivar') {
+      if (!justificacion.value.trim()) {
+        errorJustificacion.value = 'Debe ingresar un motivo para desactivar'
+        return
+      }
+      errorJustificacion.value = ''
+      await desactivarTipoFinanciamiento(tipoFinanciamientoSeleccionado.value.id, justificacion.value.trim())
+    } else if (accionConfirmar.value === 'eliminar') {
+      await eliminarTipoFinanciamiento(tipoFinanciamientoSeleccionado.value.id)
+    }
+    await obtenerTiposFinanciamiento()
+    showConfirmDialog.value = false
+    justificacion.value = ''
+  } catch (error) {
+    console.error(error)
   }
 }
 
+// Función que redirige a la pagina de catalogos
 function regresarAcatalogos() {
   router.push({
     name: 'catalogos'
   })
 }
-
-
-// Cargar datos iniciales
-onMounted(async () => {
-  utils.loader = true;
-  // Simulación de carga (eliminar al conectar)
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  items.value = [
-    { tipo_financiamiento: 'Préstamo personal', register_by: 'Aquiles Vengo', estado: 'ACTIVO' },
-    { tipo_financiamiento: 'Línea de crédito', register_by: 'Marta Rillo', estado: 'INACTIVO' },
-    { tipo_financiamiento: 'Crédito hipotecario', register_by: 'Ana Lisis', estado: 'ACTIVO' },
-    { tipo_financiamiento: 'Leasing', register_by: 'Pedro Picapiedra', estado: 'INACTIVO' },
-  ];
-  utils.loader = false;
-})
 </script>
 
 <template>
   <div>
     <app-loader-component />
 
-    <app-dialog-component
-      :show="showActivateModal"
-      title="Activar Registro"
-      text-btn="Aceptar"
-      @close="closeModals"
-      @confirm="confirmActivate"
-    >
-      <template #body>
-        <p class="text-center bg-warningBackground pa-4 rounded" style="border: 1px solid #FFC107;">
-          ¿Está seguro que desea activar el registro?<br>
-          Una vez activado este no podrá eliminarse.
-        </p>
-      </template>
-    </app-dialog-component>
+    <v-container fluid class="mb-8 bg-backgroundLay view-tipoFinanciamiento">
 
-    <app-dialog-component
-      :show="showDeactivateModal"
-      title="Desactivar Registro"
-      text-btn="Aceptar"
-      @close="closeModals"
-      @confirm="confirmDeactivate"
-    >
-      <template #body>
-        <v-form ref="modalFormRef">
-          <p class="text-center bg-warningBackground pa-4 rounded" style="border: 1px solid #FFC107;">
-          ¿Está seguro que desea inactivar el registro?</p>
-          <v-textarea
-            v-model="justificacion"
-            label="Justificación"
-            placeholder="Agregue una justificación de la acción"
-            counter
-            :rules="reglasJustificacion"
-            maxlength="250"
-            variant="solo"
-            class="mt-4 custom-textarea-placeholder"
-          ></v-textarea>
-        </v-form>
-      </template>
-    </app-dialog-component>
-
-    <v-sheet color="white" elevation="0" class="custom-sheet">
-      <v-container fluid class="mb-8">
-        <v-row justify="center" :class="display.xs || display.sm || display.md ? 'mb-8' : ''">
-          <v-col cols="12" xl="4" lg="4" sm="12" md="4">
-            <v-card
-              :elevation="0"
-              color="backgroundSection"
-              class="px-7 py-7"
-              style="border: 1px solid #6a83be; height: 100% !important"
-            >
-              <app-right-from-catalaog-component @submit="agregarFinanciamiento">
-                <template #myCatalog>
-                  <v-form ref="formRef">
-                    <v-text-field
-                      v-model="tipoFinanciamiento"
-                      variant="solo"
-                      label="Tipo de financiamiento: *"
-                      :rules="reglasFinanciamiento"
-                    ></v-text-field>
-                  </v-form>
+      <v-row justify="left"  :class="display.xs || display.sm || display.md ? 'mb-8':''">
+        <v-col cols="12" xl="4" lg="3" sm="12" md="4">
+          <v-card
+            :elevation="0"
+            color="backgroundSection"
+            class="px-7 py-7"
+            style="border: 1px solid #6a83be; min-height: 750px !important"
+          >
+            <app-right-from-catalaog-component buttonClass="mi-margin-boton" @submit="guardarTipoFinanciamiento">
+              <template #myCatalog>
+                <v-text-field v-model="tipoFinanciamiento.nombre" variant="solo" label="Ingrese tipo de financiamiento"></v-text-field>
+              </template>
+            </app-right-from-catalaog-component>
+          </v-card>
+        </v-col>
+        <v-col cols="12" xl="8" lg="9" sm="12" md="8">
+          <v-card
+            :elevation="0"
+            color="backgroundSection"
+            class="px-7 py-7"
+            style="border: 1px solid #6a83be; min-height: 750px !important"
+          >
+            <v-row justify="center">
+              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12" class="text-center">
+                <div class="bg-secondaryBackground py-2" style="border-radius: 7px;border: 1px solid #111E60;">
+                  <p>Listado</p>
+                </div>
+              </v-col>
+              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
+                <v-text-field
+                  v-model="searchTerm"
+                  variant="solo"
+                  label="Ingrese tipo de financiamiento"
+                  appendInnerIcon="mdi-magnify"
+                  @input="() => buscarTipoFinanciamiento(searchTerm)"
+                />
+              </v-col>
+              <v-col cols="12" xl="12" lg="11" sm="12" md="12" xs="12">
+              <!-- Componente de tabla que muestra los tipos de financiamiento con paginación, loader, y encabezado personalizado -->
+              <app-data-table-component
+                :headers="headers"
+                :items="paginatedItems"
+                :totalItems="items.length"
+                :loading="loading"
+                :itemsPerPage="itemsPerPage"
+                :page="page"
+                @update:page="cambiarPagina"
+                :correlativo="false"
+              >
+                <template v-slot:estado="{ item }">
+                  <!-- Verde si el tipo de financiamiento está activo -->
+                  <app-badge-component
+                    v-if="item.estado === 'activo'"
+                    color="#E5FFE9"
+                    fontColor="#37AB47"
+                    title="Activo"
+                    border="#9AECA4 md"
+                  />
+                  <!-- Rojo si el tipo de financiamiento está inactivo -->
+                  <app-badge-component
+                    v-else
+                    color="#FCF2F2"
+                    fontColor="#B94A48"
+                    title="Inactivo"
+                    border="#E63946 md"
+                  />
                 </template>
-              </app-right-from-catalaog-component>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" xl="8" lg="8" sm="12" md="8">
-            <v-card
-              :elevation="0"
-              color="backgroundSection"
-              class="px-7 py-7"
-              style="border: 1px solid #6a83be"
-            >
-              <v-row justify="center">
-                <v-col cols="12" xl="12" lg="6" sm="12" md="12" xs="12" class="text-center">
-                  <div class="bg-secondaryBackground py-2 " style="border-radius: 7px; border: 1px solid #111E60;">
-                    <p>Listado</p>
-                  </div>
-                </v-col>
-                <v-col cols="12" xl="12" lg="10" sm="12" md="12" xs="12">
-                  <v-text-field
-                    v-model="search"
-                    variant="solo"
-                    label="Buscar"
-                    placeholder="Ingrese tipo de financiamiento"
-                    append-inner-icon="mdi-magnify"
-                    :rules="reglasBusqueda"
-                    maxlength="50"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" xl="12" lg="12" sm="12" md="12" xs="12">
-                  <app-data-table-component
-                    :headers="headers"
-                    :correlativo="false"
-                    :items="paginatedItems"
-                    :totalItems="totalFilteredItems"
-                    :loading="utils.loader"
-                    v-model:page="page"
-                    :items-per-page="itemsPerPage"
-                    :customHeader="true"
-                  >
-                    <template v-slot:estado="{ item }">
-                      <v-chip
-                        label
-                        size="small"
-                        :style="item.estado === 'ACTIVO'
-                          ? 'background: #E5FFE9; border: 1px solid #37AB47'
-                          : 'background: #FFE5E5; border: 1px solid #FF4c4c'"
-                      >
-                        <span :style="item.estado === 'ACTIVO' ? 'color: #37AB47;' : 'color: #FF4c4c;'">
-                          {{ item.estado }}
-                        </span>
-                      </v-chip>
-                    </template>
-                     <template v-slot:actions="{ item }">
+                <!-- Muestra los botones de accion segun el estado del tipo de financiamiento -->
+                <template v-slot:actions="{ item }">
+                  <!-- Si esta activo muestra el boton 'desactivar' -->
+                  <app-button-action-table-component
+                    v-if="item.estado === 'activo'"
+                    text="Desactivar"
+                    icon="mdi-cancel"
+                    size="small"
+                    @btnAction="() => cambiarEstado(item)"
+                  />
+                  <div v-else>
+                    <!-- Si esta inactivo muestra el boton 'activar' -->
                     <app-button-action-table-component
-                      v-if="item.estado === 'INACTIVO' && item.isNew"
+                      text="Activar"
+                      icon="mdi-check-circle-outline"
+                      size="small"
+                      @btnAction="() => cambiarEstado(item)"
+                    />
+                    <!-- Muestra el boton eliminar solo si es nuevo y no ha sido activado -->
+                    <app-button-action-table-component
+                      v-if="item.es_nuevo"
                       text="Eliminar"
                       icon="mdi-trash-can-outline"
                       size="small"
-                      color="red"
-                      @btnAction="handleDelete(item)"
+                      @btnAction="() => eliminarTipoFinanciamientoConfirm(item)"
                     />
-                    <app-button-action-table-component
-                      v-if="item.estado === 'INACTIVO'"
-                      text="Habilitar registro"
-                      icon="mdi-check-circle-outline"
-                      size="small"
-                      color="success"
-                      @btnAction="handleActivate(item)"
-                    />
-                    <app-button-action-table-component
-                      v-if="item.estado === 'ACTIVO'"
-                      text="Deshabilitar registro"
-                      icon="mdi-cancel"
-                      size="small"
-                      color="red"
-                      @btnAction="handleDeactivate(item)"
-                    />
-                    </template>
-                  </app-data-table-component>
-                </v-col>
-               <v-col cols="11" class="text-end">
-                  <v-btn
-                   color="primary" variant="outlined"
-                    @click="regresarAcatalogos" class="custom-btn">Regresar</v-btn>
-                </v-col>
-              </v-row>
-            </v-card>
+                  </div>
+                </template>
+              </app-data-table-component>
+              </v-col>
+              <v-col cols="11" class="text-end" style="margin-top: 25px; margin-bottom: -10%;">
+                <v-btn color="primaryBackground" variant="outlined" @click="regresarAcatalogos">Regresar</v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+    <!-- Modal de confirmacion -->
+    <app-dialog-component
+      v-model="showConfirmDialog"
+      :title="accionConfirmar === 'eliminar' ? 'Eliminar registro' : 'Cambiar estado del registro'"
+      textBtn="Aceptar"
+      @close="showConfirmDialog = false"
+      @confirm="confirmarAccion"
+      max-width="550"
+    >
+    <!-- Mensaje principal -->
+      <template v-slot:body>
+        <v-row>
+          <v-col cols="12" class="text-center">
+            <span>
+              <b>
+                ¿Está seguro de
+                {{ accionConfirmar === 'activar' ? 'activar' : accionConfirmar === 'desactivar' ? 'desactivar' : 'eliminar' }}
+                el tipo de financiamiento <u>{{ tipoFinanciamientoSeleccionado?.nombre }}</u>?
+              </b>
+            </span>
+          </v-col>
+          <!-- Campo de justificación solo para desactivar -->
+          <v-col cols="12" v-if="accionConfirmar === 'desactivar'">
+            <v-textarea
+              v-model="justificacion"
+              label="Agregue una justificacion de la accion"
+              rows="3"
+              outlined
+              :error="!!errorJustificacion"
+              :error-messages="errorJustificacion"
+              required
+            ></v-textarea>
           </v-col>
         </v-row>
-      </v-container>
-    </v-sheet>
+      </template>
+    </app-dialog-component>
   </div>
 </template>
-
 <style>
-/* Estilos para el fondo del modal de activación */
-.bg-warningBackground {
-  background-color: #FFF3E0 !important;
+.view-tipoFinanciamiento {
+  padding: 30px;
+  margin-top: -30px;
+  margin-bottom: 10px;
+  min-height: 810px;
+  height: auto;
 }
 
-/* Estilo para ajustar el placeholder del v-textarea */
-.custom-textarea-placeholder .v-field__input::placeholder {
-    visibility: visible;
-    opacity: 1;
-    color: inherit;
-}
-
-/* Estilo para el fondo de blanco de la pantalla */
-.custom-sheet {
-  min-height: calc(100vh - 90px) ;
-  margin-top: -16px;
-  padding: 16px;
-}
-
-/* Estilo del boton regresar*/
-.custom-btn {
-  background-color: white ! important;
+.mi-margin-boton {
+  margin-top: 500px !important;
+  margin-bottom: -10%;
 }
 </style>
