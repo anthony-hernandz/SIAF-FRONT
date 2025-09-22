@@ -48,6 +48,12 @@ export const ENDPOINTS = {
     DELETE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}`,
     ACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/activar`,
     DEACTIVATE: (id) => `/api/v1/admin/catalogs/procedencia-catalogo/${id}/desactivar`,
+  },
+  TIPO_FINANCIAMIENTO: {
+    BASE: '/api/v1/administracion/catalogos/tipofinanciamiento',
+    ACTIVAR: (id) => `/api/v1/administracion/catalogos/tipofinanciamiento/${id}/activar`,
+    DESACTIVAR: (id) => `/api/v1/administracion/catalogos/tipofinanciamiento/${id}/desactivar`,
+    DELETE: (id) => `/api/v1/administracion/catalogos/tipofinanciamiento/${id}`,
   }
 
 }
